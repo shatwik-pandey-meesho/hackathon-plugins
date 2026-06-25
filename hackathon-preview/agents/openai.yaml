@@ -1,0 +1,4 @@
+interface:
+  display_name: "Hackathon Preview"
+  short_description: "Run the app for local viewing"
+  default_prompt: "Use $hackathon-preview to start my hackathon app and show me the local URL."

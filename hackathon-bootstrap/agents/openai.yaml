@@ -1,0 +1,4 @@
+interface:
+  display_name: "Hackathon Bootstrap"
+  short_description: "Start an allowed-stack project"
+  default_prompt: "Use $hackathon-bootstrap to create a new React plus Node or Go plus MySQL project."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Submission Check"
+  short_description: "Verify final judging readiness"
+  default_prompt: "Use $hackathon-submission-check to verify my app is ready for judging."

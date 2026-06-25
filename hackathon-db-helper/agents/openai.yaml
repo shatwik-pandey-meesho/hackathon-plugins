@@ -1,0 +1,4 @@
+interface:
+  display_name: "Hackathon DB Helper"
+  short_description: "Handle MySQL changes safely"
+  default_prompt: "Use $hackathon-db-helper to update the MySQL database for my app."

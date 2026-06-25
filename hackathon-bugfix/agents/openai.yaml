@@ -1,0 +1,4 @@
+interface:
+  display_name: "Hackathon Bugfix"
+  short_description: "Fix common app errors safely"
+  default_prompt: "Use $hackathon-bugfix to diagnose and fix what is broken in my hackathon app."

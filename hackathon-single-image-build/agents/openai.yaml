@@ -1,0 +1,4 @@
+interface:
+  display_name: "Single Image Build"
+  short_description: "Package everything into one image"
+  default_prompt: "Use $hackathon-single-image-build to build my final one-image submission."

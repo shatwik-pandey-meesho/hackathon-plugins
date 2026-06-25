@@ -1,0 +1,4 @@
+interface:
+  display_name: "GCP Registry Push"
+  short_description: "Push final image to GCP registry"
+  default_prompt: "Use $hackathon-gcp-push to push my final image to Artifact Registry."

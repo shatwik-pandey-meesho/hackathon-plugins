@@ -1,0 +1,4 @@
+interface:
+  display_name: "Hackathon Explainer"
+  short_description: "Explain technical work simply"
+  default_prompt: "Use $hackathon-explainer to explain my project or an error in plain language."

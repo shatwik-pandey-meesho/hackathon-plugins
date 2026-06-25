@@ -1,0 +1,4 @@
+interface:
+  display_name: "Hackathon Feature Builder"
+  short_description: "Turn feature ideas into code"
+  default_prompt: "Use $hackathon-feature-builder to add a plain-language feature to my hackathon app."
