@@ -11,6 +11,7 @@ Use this contract when creating or repairing a participant project.
 - `.dockerignore`: excludes dependencies, build outputs, git metadata, env files, and local database files.
 - `.env.example`: documents configurable values without secrets.
 - `README.md`: gives local preview, build, run, and final image commands.
+- `.agent-memory/`: durable agent memory directory.
 
 ## Runtime Contract
 
@@ -20,6 +21,7 @@ Use this contract when creating or repairing a participant project.
 - Backend `/health` returns a simple successful response at `http://localhost:8090/health` after SQLite is ready.
 - Backend reads and writes a local SQLite file, normally `data/hackathon.db` or `app.db`.
 - Database path defaults to `data/hackathon.db`.
+- Memory files must exist in the project root under `.agent-memory/`.
 
 ## Port Conflicts
 

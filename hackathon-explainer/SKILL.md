@@ -39,6 +39,11 @@ For a feature:
 You can now add customers from the form and see them in the table. The app saves them in SQLite, so they are available to the backend.
 ```
 
+## Memory
+
+- If `.agent-memory/` exists, use it as the primary source for explaining current project state and recent changes.
+- When an explanation reveals new status or a resolved blocker, ensure `.agent-memory/session.md` and `.agent-memory/handoff.md` stay aligned.
+
 ## Resource
 
 - `references/plain-language.md`: preferred wording for common technical topics.

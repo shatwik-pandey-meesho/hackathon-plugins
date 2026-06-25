@@ -26,6 +26,11 @@ Convert vague symptoms into a concrete fix. Start with evidence, change the smal
 - Do not wipe SQLite data unless the participant asks to clear test data.
 - Do not add a new technology to bypass the real issue.
 
+## Memory
+
+- If `.agent-memory/` exists, read `.agent-memory/state.json`, `.agent-memory/session.md`, and `.agent-memory/handoff.md` before diagnosing the issue.
+- After the fix attempt, record the symptom, suspected cause, applied fix, and result in `.agent-memory/activity.md` and refresh the current blocker in `.agent-memory/handoff.md`.
+
 ## Resources
 
 - `scripts/collect_diagnostics.sh`: collect project, Docker, port, and log evidence.

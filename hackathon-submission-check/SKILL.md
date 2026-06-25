@@ -32,6 +32,11 @@ Check the complete judging path end to end. The output should be a clear pass/fa
 - Final image URL is known or ready to push.
 - No obvious secrets are committed.
 
+## Memory
+
+- If `.agent-memory/` exists, read `.agent-memory/state.json`, `.agent-memory/session.md`, and `.agent-memory/handoff.md` before checking readiness.
+- After the check, record pass/fail status and the next exact action in `.agent-memory/`.
+
 ## Resources
 
 - `scripts/check_submission.sh`: automated readiness checks.

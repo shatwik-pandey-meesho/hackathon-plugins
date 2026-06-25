@@ -27,6 +27,11 @@ Handle database work without making the participant learn SQL. Keep data structu
 - Use `created_at` timestamps for participant-created records.
 - Keep sample seed data small and obviously fake.
 
+## Memory
+
+- If `.agent-memory/` exists, read `.agent-memory/state.json`, `.agent-memory/session.md`, and `.agent-memory/handoff.md` before changing schema or data behavior.
+- After each schema or data change, update the current database state in `.agent-memory/` and append the migration outcome to `.agent-memory/activity.md`.
+
 ## Resources
 
 - `scripts/sqlite_smoke_check.sh`: verify SQLite database access and list tables.

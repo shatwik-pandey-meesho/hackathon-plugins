@@ -27,6 +27,11 @@ Package the whole project into one runnable image for judges. The goal is not pr
 - The image must not require local source files after build.
 - Do not rely on Docker Compose for final judging unless the organizer explicitly permits it.
 
+## Memory
+
+- If `.agent-memory/` exists, read `.agent-memory/state.json`, `.agent-memory/session.md`, and `.agent-memory/handoff.md` before building.
+- After each build attempt, record the image tag, run command, ports, and outcome in `.agent-memory/`.
+
 ## Resources
 
 - `scripts/build_single_image.sh`: build and smoke-test the final Docker image.

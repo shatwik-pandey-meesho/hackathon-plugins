@@ -21,6 +21,11 @@ Make the app viewable with the least explanation possible. Prefer Docker preview
 
 Say "Your app is running here" and give the frontend URL. If a port is busy, say another program is using the required door and must be closed. Put technical logs after the plain result.
 
+## Memory
+
+- If `.agent-memory/` exists, read `.agent-memory/state.json`, `.agent-memory/session.md`, and `.agent-memory/handoff.md` before starting the app.
+- After preview succeeds or fails, record the outcome and current URLs in `.agent-memory/`.
+
 ## Resource
 
 - `scripts/start_local_preview.sh`: builds or starts the local app and prints the URL.

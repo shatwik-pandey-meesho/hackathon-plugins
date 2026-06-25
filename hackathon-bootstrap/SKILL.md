@@ -22,14 +22,22 @@ Do not introduce Next.js, Python, Java, MongoDB, Postgres, Redis, Firebase, Supa
 
 ## Workflow
 
-1. Ask for the app idea only if it is missing. Choose Node.js by default for non-technical teams unless they explicitly ask for Go.
-2. Run `scripts/check_and_install_tools.sh` first. Use check mode by default; use `--install` only after the user approves installing software.
-3. Create or repair the project so it has `frontend/`, `backend/`, `db/`, `Dockerfile`, `.dockerignore`, `.env.example`, and a short `README.md`.
-4. Make the first screen usable immediately: a simple app title, one example form, one list view, and one health/status endpoint.
-5. Add local commands that work without explaining internals:
+1. Before any other action, check whether `.agent-memory/` already exists in the project root.
+2. If `.agent-memory/` exists, run `scripts/recontextualize_agent_memory.sh` or `scripts/recontextualize_agent_memory.ps1`, read the memory files, and summarize the current state before asking new questions. Treat the memory files as the project source of truth for prior decisions, completed steps, blockers, ports, build outputs, registry URLs, and next actions.
+3. If `.agent-memory/` does not exist, run `scripts/setup_agent_memory.sh` or `scripts/setup_agent_memory.ps1` to create it immediately.
+4. Ask for the app idea only if it is missing from memory. Choose Node.js by default for non-technical teams unless they explicitly ask for Go.
+5. Run `scripts/check_and_install_tools.sh` first. Use check mode by default; use `--install` only after the user approves installing software.
+6. Create or repair the project so it has `frontend/`, `backend/`, `db/`, `Dockerfile`, `.dockerignore`, `.env.example`, a short `README.md`, and the required `.agent-memory/` files.
+7. Make the first screen usable immediately: a simple app title, one example form, one list view, and one health/status endpoint.
+8. Add local commands that work without explaining internals:
    - `docker build -t hackathon-app:local .`
    - `docker run --rm -p 9080:9080 -p 8090:8090 hackathon-app:local`
-6. Verify the app starts before telling the participant it is ready.
+9. Verify the app starts before telling the participant it is ready.
+10. After every major step, update the memory files:
+   - append a timestamped entry to `.agent-memory/activity.md`
+   - update `.agent-memory/state.json` when ports, stack, image tags, registry URLs, repo URLs, or status change
+   - refresh `.agent-memory/session.md` with the current narrative state
+   - refresh `.agent-memory/handoff.md` with the current blocker and next exact action
 
 ## Required Ports
 
@@ -46,8 +54,17 @@ Say "I am setting up your app so you can open it in a browser" instead of naming
 
 Read `references/project-contract.md` before creating or repairing a starter. The contract defines required ports, folders, env vars, health checks, and the single-image rule.
 
+## Memory Contract
+
+Read `references/memory-contract.md` before first setup and before any resume. Bootstrap must leave the project in a state where a new session can recover the full working context from `.agent-memory/` without depending on chat history.
+
 ## Resources
 
 - `scripts/check_and_install_tools.sh`: detect OS, check required tools, optionally install common packages on macOS/Linux.
 - `scripts/check_and_install_tools.ps1`: check tools and optionally install common packages on Windows.
+- `scripts/setup_agent_memory.sh`: create the required memory files on macOS/Linux.
+- `scripts/setup_agent_memory.ps1`: create the required memory files on Windows.
+- `scripts/recontextualize_agent_memory.sh`: print the current memory state on macOS/Linux.
+- `scripts/recontextualize_agent_memory.ps1`: print the current memory state on Windows.
 - `references/project-contract.md`: starter project requirements for all hackathon apps.
+- `references/memory-contract.md`: required memory files and update rules.

@@ -44,3 +44,17 @@ These skills are usable by Codex, Claude, Gemini, or another terminal-capable ag
 The only Codex-specific file is `agents/openai.yaml`. The workflows, references, and scripts are tool-agnostic.
 
 Windows participants can use the PowerShell scripts in each `scripts/` folder. macOS and Linux participants can use the Bash scripts.
+
+## Installing
+
+Use the repo installer scripts:
+
+- macOS/Linux: `./scripts/install-skills.sh --agent codex`
+- Windows PowerShell: `.\scripts\install-skills.ps1 -Agent codex`
+
+For Claude, copy the skill folders into a destination directory:
+
+- macOS/Linux: `./scripts/install-skills.sh --agent claude --dest "$HOME/claude-skills"`
+- Windows PowerShell: `.\scripts\install-skills.ps1 -Agent claude -Dest "$HOME\claude-skills"`
+
+See [INSTALLING.md](/Users/shatwik.pandey/Projects/BUILDATHON/skills/INSTALLING.md) for the full method and options.

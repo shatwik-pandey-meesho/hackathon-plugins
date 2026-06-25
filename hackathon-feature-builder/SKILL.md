@@ -28,6 +28,11 @@ Turn plain-language product ideas into working code. The participant should focu
 - Use mock login or simple local roles when the participant says "login" unless real authentication is explicitly required and allowed.
 - Keep UI copy short and direct.
 
+## Memory
+
+- If `.agent-memory/` exists, read `.agent-memory/state.json`, `.agent-memory/session.md`, and `.agent-memory/handoff.md` before editing.
+- After each meaningful change, update those files and append the result to `.agent-memory/activity.md`.
+
 ## Resources
 
 - `scripts/project_sanity_check.sh`: quick structural checks after feature work.

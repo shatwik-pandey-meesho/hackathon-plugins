@@ -25,6 +25,11 @@ Put the project on GitHub without leaking secrets or losing work. Keep git expla
 - Do not rewrite history for non-technical participants.
 - Prefer small commits with clear messages.
 
+## Memory
+
+- If `.agent-memory/` exists, read `.agent-memory/state.json`, `.agent-memory/session.md`, and `.agent-memory/handoff.md` before changing git state.
+- After a commit or push, update `.agent-memory/state.json` with the repo URL or commit state and append the outcome to `.agent-memory/activity.md`.
+
 ## Resources
 
 - `scripts/push_to_github.sh`: initialize git, scan for obvious secrets, commit, create or use GitHub remote, and push.

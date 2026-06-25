@@ -27,6 +27,11 @@ Take a locally built image and publish it to the organization registry. Be caref
 - Do not delete registry images.
 - Use `--create-repo` only when the participant or organizer confirms repository creation is allowed.
 
+## Memory
+
+- If `.agent-memory/` exists, read `.agent-memory/state.json`, `.agent-memory/session.md`, and `.agent-memory/handoff.md` before pushing.
+- After a push attempt, update `.agent-memory/state.json` with the registry URL and append the exact result to `.agent-memory/activity.md`.
+
 ## Resources
 
 - `scripts/push_to_gcp_registry.sh`: tag, authenticate, optionally create repo, and push.

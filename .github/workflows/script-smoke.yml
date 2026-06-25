@@ -30,11 +30,31 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for f in hackathon-*/scripts/*.sh; do
+          for f in scripts/*.sh hackathon-*/scripts/*.sh; do
             echo "$f"
             bash -n "$f"
             "$f" --help >/dev/null
           done
+
+      - name: Test Bash installer in codex mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          DEST="$(mktemp -d)/codex-skills"
+          ./scripts/install-skills.sh --agent codex --dest "$DEST"
+          test -d "$DEST/hackathon-bootstrap"
+          test -f "$DEST/hackathon-bootstrap/SKILL.md"
+          test -d "$DEST/hackathon-submission-check"
+
+      - name: Test Bash installer in claude mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          DEST="$(mktemp -d)/claude-skills"
+          ./scripts/install-skills.sh --agent claude --dest "$DEST" --skills hackathon-bootstrap,hackathon-preview
+          test -d "$DEST/hackathon-bootstrap"
+          test -d "$DEST/hackathon-preview"
+          test ! -d "$DEST/hackathon-bugfix"
 
       - name: Ensure legacy database references were removed
         shell: bash
@@ -66,7 +86,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          $scripts = Get-ChildItem -Path . -Recurse -Filter *.ps1
+          $scripts = @(Get-ChildItem -Path . -Recurse -Filter *.ps1)
           if (-not $scripts) {
             throw "No PowerShell scripts found"
           }
@@ -82,11 +102,40 @@ jobs:
             & $script.FullName -Help | Out-Null
           }
 
+      - name: Test PowerShell installer in codex mode
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $dest = Join-Path $env:RUNNER_TEMP "codex-skills"
+          .\scripts\install-skills.ps1 -Agent codex -Dest $dest
+          if (-not (Test-Path (Join-Path $dest "hackathon-bootstrap\SKILL.md"))) {
+            throw "Codex install did not create hackathon-bootstrap"
+          }
+          if (-not (Test-Path (Join-Path $dest "hackathon-submission-check\SKILL.md"))) {
+            throw "Codex install did not create hackathon-submission-check"
+          }
+
+      - name: Test PowerShell installer in claude mode
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $dest = Join-Path $env:RUNNER_TEMP "claude-skills"
+          .\scripts\install-skills.ps1 -Agent claude -Dest $dest -Skills "hackathon-bootstrap,hackathon-preview"
+          if (-not (Test-Path (Join-Path $dest "hackathon-bootstrap\SKILL.md"))) {
+            throw "Claude install did not create hackathon-bootstrap"
+          }
+          if (-not (Test-Path (Join-Path $dest "hackathon-preview\SKILL.md"))) {
+            throw "Claude install did not create hackathon-preview"
+          }
+          if (Test-Path (Join-Path $dest "hackathon-bugfix")) {
+            throw "Claude install copied an unrequested skill"
+          }
+
       - name: Ensure matching Bash scripts exist
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          foreach ($ps in Get-ChildItem -Path hackathon-* -Recurse -Filter *.ps1) {
+          foreach ($ps in Get-ChildItem -Path . -Recurse -Filter *.ps1) {
             $sh = [System.IO.Path]::ChangeExtension($ps.FullName, ".sh")
             if (-not (Test-Path $sh)) {
               throw "Missing Bash counterpart for $($ps.FullName)"
