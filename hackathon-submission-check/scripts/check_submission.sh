@@ -10,6 +10,7 @@ and scans committed files for obvious secrets.
 Environment:
   FRONTEND_PORT=9080
   BACKEND_PORT=8090
+  DATA_DIR=$PWD/data
 USAGE
   exit 0
 fi
@@ -17,6 +18,7 @@ fi
 IMAGE="${1:-hackathon-app:final}"
 FRONTEND_PORT="${FRONTEND_PORT:-9080}"
 BACKEND_PORT="${BACKEND_PORT:-8090}"
+DATA_DIR="${DATA_DIR:-$PWD/data}"
 FAIL=0
 
 pass() { printf "PASS  %s\n" "$1"; }
@@ -73,6 +75,7 @@ check_port_available "$BACKEND_PORT" "Backend"
 if [[ "$FAIL" -ne 0 ]]; then
   exit "$FAIL"
 fi
+mkdir -p "$DATA_DIR"
 
 CONTAINER="hackathon-final-check-$RANDOM"
 cleanup() {
@@ -80,8 +83,9 @@ cleanup() {
 }
 trap cleanup EXIT
 
-if docker run -d --name "$CONTAINER" -p "$FRONTEND_PORT:9080" -p "$BACKEND_PORT:8090" "$IMAGE" >/dev/null; then
+if docker run -d --name "$CONTAINER" -p "$FRONTEND_PORT:9080" -p "$BACKEND_PORT:8090" -v "$DATA_DIR:/app/data" "$IMAGE" >/dev/null; then
   pass "container starts"
+  pass "repo-local SQLite data directory mounted: $DATA_DIR -> /app/data"
 else
   fail "container failed to start"
   exit "$FAIL"

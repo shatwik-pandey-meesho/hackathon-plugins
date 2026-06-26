@@ -16,6 +16,10 @@ Required local ports:
 
 Claude or another agent should handle these ports during setup. If either port is already used by another program, that program must be closed or moved before the prototype can run correctly.
 
+SQLite data is stored as a repo-local file, normally `data/hackathon.db`. Docker runs mount
+the repo's ignored `data/` directory into the container at `/app/data`, so saved records
+survive container restarts while `.db` files stay out of Git.
+
 ## Skills
 
 - `hackathon-bootstrap`: set up tools and create/repair the starter app.
@@ -47,15 +51,43 @@ Windows participants can use the PowerShell scripts in each `scripts/` folder. m
 
 ## Installing
 
-Use the repo installer scripts:
+From a terminal in this repo, install the skills with these steps.
 
-- macOS/Linux: `./scripts/install-skills.sh --agent codex`
-- Windows PowerShell: `.\scripts\install-skills.ps1 -Agent codex`
+macOS/Linux for Codex:
 
-For Claude, copy the skill folders into a destination directory:
+```bash
+cd /path/to/skills
+chmod +x scripts/install-skills.sh
+./scripts/install-skills.sh --list
+./scripts/install-skills.sh --agent codex
+```
 
-- macOS/Linux: `./scripts/install-skills.sh --agent claude --dest "$HOME/claude-skills"`
-- Windows PowerShell: `.\scripts\install-skills.ps1 -Agent claude -Dest "$HOME\claude-skills"`
+macOS/Linux for Claude Code:
+
+```bash
+cd /path/to/skills
+chmod +x scripts/install-skills.sh
+./scripts/install-skills.sh --list
+./scripts/install-skills.sh --agent claude
+```
+
+Windows PowerShell for Codex:
+
+```powershell
+Set-Location C:\path\to\skills
+.\scripts\install-skills.ps1 -List
+.\scripts\install-skills.ps1 -Agent codex
+```
+
+Windows PowerShell for Claude Code:
+
+```powershell
+Set-Location C:\path\to\skills
+.\scripts\install-skills.ps1 -List
+.\scripts\install-skills.ps1 -Agent claude
+```
+
+Restart the agent after installing so it re-scans the skills directory.
 
 See [INSTALLING.md](./INSTALLING.md) for all install methods (automated script, manual copy into `.claude`, use-from-repo, Codex).
 

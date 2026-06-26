@@ -31,7 +31,7 @@ Options:
             Use "claude" to copy the skill folders into a destination directory.
   --dest    Destination directory.
             For codex, default: ${CODEX_HOME:-$HOME/.codex}/skills
-            For claude, required because no single native auto-discovery path is assumed.
+            For claude, default: $HOME/.claude/skills
   --skills  "all" or a comma-separated list of skill folder names.
   --force   Overwrite existing destination skill folders.
   --list    Print the installable skill names and exit.

@@ -29,6 +29,7 @@ if [[ ! -f .gitignore ]]; then
   cat > .gitignore <<'EOF'
 .env
 .env.*
+!.env.example
 *.pem
 *.key
 *service-account*.json

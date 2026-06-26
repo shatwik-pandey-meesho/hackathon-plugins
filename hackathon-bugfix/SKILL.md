@@ -25,6 +25,9 @@ Convert vague symptoms into a concrete fix. Start with evidence, change the smal
 - Do not reset git history.
 - Do not wipe SQLite data unless the participant asks to clear test data.
 - Do not add a new technology to bypass the real issue.
+- For Docker/SQLite failures, keep Debian slim base images; do not switch to Alpine.
+- For Node SQLite native packages such as `better-sqlite3`, ensure the Docker build stage installs `python3`, `make`, and `g++`.
+- For "data is not saving" after restart, verify the repo-local `data/` directory is mounted into Docker as `/app/data`.
 
 ## Memory
 

@@ -37,10 +37,31 @@ So you don't have to think about them:
 - **Fixed ports:** frontend on `9080`, backend on `8090`.
 - **One final Docker image** that contains the frontend, backend, and database setup —
   no Docker Compose or separate database container at judging.
+- **Repo-local SQLite data** in `data/hackathon.db` for local runs, mounted into Docker at
+  `/app/data` so saved records survive container restarts.
 - **Debian slim base images** in every Dockerfile (never Alpine — it breaks SQLite builds).
 - **No secrets in GitHub** — `.env`, keys, tokens, and `.db` files are kept out of commits.
 - **Durable memory:** progress is written to `.agent-memory/` so a new session can pick up
   exactly where you left off.
+
+---
+
+## Where saved data lives
+
+SQLite is a file database. For these hackathon apps, saved records live in the repo's
+`data/hackathon.db` file during local runs. The `data/` folder is ignored by Git, so saved
+test records are not pushed to GitHub.
+
+When the app runs in Docker, the repo's `data/` folder is mounted into the container at
+`/app/data`:
+
+```bash
+mkdir -p data
+docker run --rm -p 9080:9080 -p 8090:8090 -v "$(pwd)/data:/app/data" IMAGE
+```
+
+The `--rm` flag may delete the stopped container, but the database file remains in
+`./data/` because it is stored in the repo folder, not inside the container image layer.
 
 ---
 
@@ -125,7 +146,7 @@ React app, the Node backend, and SQLite init, then smoke-tests it: it starts a c
 waits for `/health` and the homepage, and prints the exact run command:
 
 ```bash
-docker run --rm -p 9080:9080 -p 8090:8090 recipebox:final
+mkdir -p data && docker run --rm -p 9080:9080 -p 8090:8090 -v "$(pwd)/data:/app/data" recipebox:final
 ```
 
 ### Step 9 — Push to GCP
@@ -140,8 +161,9 @@ it, and prints the final registry URL the judges will pull.
 > *"Is RecipeBox ready to submit?"*
 
 `hackathon-submission-check` runs the checklist: single image builds and runs, ports correct,
-SQLite initializes, GitHub repo exists with no secrets, README has run instructions, image is
-in the registry. It reports a green checklist (or tells her exactly what is still missing).
+SQLite initializes in the repo-local `data/` directory, GitHub repo exists with no secrets,
+README has run instructions, image is in the registry. It reports a green checklist (or tells
+her exactly what is still missing).
 
 RecipeBox is submitted.
 

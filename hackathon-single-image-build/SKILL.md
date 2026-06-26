@@ -13,7 +13,7 @@ Package the whole project into one runnable image for judges. The goal is not pr
 
 1. Read `references/single-image-contract.md`.
 2. Inspect `Dockerfile`, `.dockerignore`, `frontend/`, `backend/`, and `db/`.
-3. If missing, create a Dockerfile that builds React, builds Node.js or Go, initializes the SQLite schema, and starts the app. Use Debian slim base images only (`node:20-bookworm-slim` for Node stages, `golang:1.22-bookworm` + `debian:bookworm-slim` for Go). Never use Alpine — its musl libc breaks SQLite native builds for beginners.
+3. If missing, create a Dockerfile that builds React, builds Node.js or Go, initializes the SQLite schema, and starts the app. Use Debian slim base images only (`node:20-bookworm-slim` for Node stages, `golang:1.22-bookworm` + `debian:bookworm-slim` for Go). Never use Alpine because musl libc breaks SQLite native builds for beginners. For Node backends using native SQLite packages such as `better-sqlite3`, install `python3`, `make`, and `g++` in the build stage before `npm install` or `npm ci`.
 4. Run `scripts/build_single_image.sh <image-name>:<tag>`.
 5. Confirm the container starts and `GET /health` or the root page responds.
 6. Report the image tag and exact `docker run` command.
@@ -23,7 +23,7 @@ Package the whole project into one runnable image for judges. The goal is not pr
 - One image is enough to run the project.
 - The frontend listens on container port `9080`.
 - The backend listens on container port `8090`.
-- SQLite data may be ephemeral for judging unless the rules require persistent volume support.
+- SQLite data must live under `/app/data` in the container, with the repo's local `data/` directory bind-mounted there for preview, smoke tests, and judging.
 - The image must not require local source files after build.
 - Do not rely on Docker Compose for final judging unless the organizer explicitly permits it.
 

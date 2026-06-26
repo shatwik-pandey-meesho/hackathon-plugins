@@ -35,7 +35,7 @@ Do not introduce Next.js, Python, Java, MongoDB, Postgres, Redis, Firebase, Supa
 8. Make the first screen usable immediately: a simple app title, one example form, one list view, and one health/status endpoint.
 9. Add local commands that work without explaining internals:
    - `docker build -t hackathon-app:local .`
-   - `docker run --rm -p 9080:9080 -p 8090:8090 hackathon-app:local`
+   - `mkdir -p data && docker run --rm -p 9080:9080 -p 8090:8090 -v "$(pwd)/data:/app/data" hackathon-app:local`
 10. Verify the app starts before telling the participant it is ready.
 11. After every major step, update the memory files:
    - append a timestamped entry to `.agent-memory/activity.md`

@@ -2,12 +2,13 @@ param(
   [string]$Image = $env:IMAGE,
   [int]$FrontendPort = $(if ($env:FRONTEND_PORT) { [int]$env:FRONTEND_PORT } else { 9080 }),
   [int]$BackendPort = $(if ($env:BACKEND_PORT) { [int]$env:BACKEND_PORT } else { 8090 }),
+  [string]$DataDir = $(if ($env:DATA_DIR) { $env:DATA_DIR } else { Join-Path (Get-Location) "data" }),
   [switch]$Help
 )
 
 if ($Help) {
   @"
-Usage: .\start_local_preview.ps1 [-Image hackathon-app:local] [-FrontendPort 9080] [-BackendPort 8090]
+Usage: .\start_local_preview.ps1 [-Image hackathon-app:local] [-FrontendPort 9080] [-BackendPort 8090] [-DataDir .\data]
 
 Runs the current project locally and prints the browser URL.
 "@
@@ -30,12 +31,14 @@ function Test-PortAvailable {
 if ((Get-Command docker -ErrorAction SilentlyContinue) -and (Test-Path "Dockerfile")) {
   Test-PortAvailable -Port $FrontendPort -Label "Frontend"
   Test-PortAvailable -Port $BackendPort -Label "Backend"
+  New-Item -ItemType Directory -Force $DataDir | Out-Null
   Write-Host "Building Docker image: $Image"
   docker build -t $Image .
   Write-Host "Starting preview container:"
   Write-Host "  Frontend: http://localhost:$FrontendPort"
   Write-Host "  Backend:  http://localhost:$BackendPort/health"
-  docker run --rm -p "${FrontendPort}:9080" -p "${BackendPort}:8090" $Image
+  Write-Host "  Data:     $DataDir mounted at /app/data"
+  docker run --rm -p "${FrontendPort}:9080" -p "${BackendPort}:8090" -v "${DataDir}:/app/data" $Image
   exit 0
 }
 

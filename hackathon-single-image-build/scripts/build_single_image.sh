@@ -4,6 +4,7 @@ set -euo pipefail
 IMAGE="${1:-hackathon-app:final}"
 FRONTEND_PORT="${FRONTEND_PORT:-9080}"
 BACKEND_PORT="${BACKEND_PORT:-8090}"
+DATA_DIR="${DATA_DIR:-$PWD/data}"
 CONTAINER="hackathon-smoke-$RANDOM"
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
@@ -14,6 +15,7 @@ Builds the final single Docker image and smoke-tests it.
 Environment:
   FRONTEND_PORT=9080
   BACKEND_PORT=8090
+  DATA_DIR=$PWD/data
 USAGE
   exit 0
 fi
@@ -40,6 +42,7 @@ check_port_available() {
 
 check_port_available "$FRONTEND_PORT" "Frontend"
 check_port_available "$BACKEND_PORT" "Backend"
+mkdir -p "$DATA_DIR"
 
 echo "Building $IMAGE"
 docker build -t "$IMAGE" .
@@ -50,7 +53,7 @@ cleanup() {
 trap cleanup EXIT
 
 echo "Starting smoke test container"
-docker run -d --name "$CONTAINER" -p "$FRONTEND_PORT:9080" -p "$BACKEND_PORT:8090" "$IMAGE" >/dev/null
+docker run -d --name "$CONTAINER" -p "$FRONTEND_PORT:9080" -p "$BACKEND_PORT:8090" -v "$DATA_DIR:/app/data" "$IMAGE" >/dev/null
 
 echo "Waiting for backend on http://localhost:$BACKEND_PORT/health and frontend on http://localhost:$FRONTEND_PORT"
 for _ in $(seq 1 45); do
@@ -59,7 +62,7 @@ for _ in $(seq 1 45); do
     && curl -fsS "http://localhost:$FRONTEND_PORT/" >/dev/null 2>&1; then
     echo "Frontend and backend checks passed."
     echo "Image ready: $IMAGE"
-    echo "Run command: docker run --rm -p 9080:9080 -p 8090:8090 $IMAGE"
+    echo "Run command: docker run --rm -p 9080:9080 -p 8090:8090 -v \"\$(pwd)/data:/app/data\" $IMAGE"
     exit 0
   fi
   sleep 2

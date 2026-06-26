@@ -3,7 +3,7 @@
 ## Must Ignore
 
 - `.env`
-- `.env.*`
+- `.env.*`, except `.env.example`
 - service account JSON
 - `node_modules/`
 - `dist/`

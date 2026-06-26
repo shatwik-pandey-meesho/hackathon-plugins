@@ -4,6 +4,7 @@ set -euo pipefail
 IMAGE="${IMAGE:-hackathon-app:local}"
 FRONTEND_PORT="${FRONTEND_PORT:-9080}"
 BACKEND_PORT="${BACKEND_PORT:-8090}"
+DATA_DIR="${DATA_DIR:-$PWD/data}"
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
   cat <<'USAGE'
@@ -14,6 +15,7 @@ Environment:
   IMAGE=hackathon-app:local
   FRONTEND_PORT=9080
   BACKEND_PORT=8090
+  DATA_DIR=$PWD/data
 USAGE
   exit 0
 fi
@@ -31,12 +33,14 @@ check_port_available() {
 if command -v docker >/dev/null 2>&1 && [[ -f Dockerfile ]]; then
   check_port_available "$FRONTEND_PORT" "Frontend"
   check_port_available "$BACKEND_PORT" "Backend"
+  mkdir -p "$DATA_DIR"
   echo "Building Docker image: $IMAGE"
   docker build -t "$IMAGE" .
   echo "Starting preview container:"
   echo "  Frontend: http://localhost:$FRONTEND_PORT"
   echo "  Backend:  http://localhost:$BACKEND_PORT/health"
-  docker run --rm -p "$FRONTEND_PORT:9080" -p "$BACKEND_PORT:8090" "$IMAGE"
+  echo "  Data:     $DATA_DIR mounted at /app/data"
+  docker run --rm -p "$FRONTEND_PORT:9080" -p "$BACKEND_PORT:8090" -v "$DATA_DIR:/app/data" "$IMAGE"
   exit 0
 fi
 

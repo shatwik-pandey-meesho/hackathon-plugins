@@ -18,11 +18,15 @@
 
 ## Files
 
-- Store the database under `data/`, for example `data/hackathon.db`.
-- Ensure the Docker image creates the `data/` directory before the app starts.
+- Store the database under `data/` locally, for example `data/hackathon.db`.
+- In Docker, write the database to `/app/data/hackathon.db`.
+- Run Docker with the repo-local bind mount `-v "$(pwd)/data:/app/data"` so the SQLite file stays in the repo's ignored `data/` directory after the container exits.
+- Ensure the Docker image creates `/app/data` before the app starts and does not overwrite an existing database file.
 - Keep `db/init.sql` runnable from scratch for judges.
 
 ## Changes
 
 - Prefer additive changes.
+- SQLite supports only limited `ALTER TABLE` operations. Adding a column is usually safe, but SQLite cannot add a column with `DEFAULT CURRENT_TIMESTAMP`; add a nullable column or a constant default, then backfill values with `UPDATE`.
+- SQLite cannot drop columns in older runtimes and cannot freely change column types or constraints. For those changes, create a new table, copy data, drop the old table only with explicit participant approval, and rename the new table.
 - Before destructive changes, ask the participant directly and explain what will be lost.

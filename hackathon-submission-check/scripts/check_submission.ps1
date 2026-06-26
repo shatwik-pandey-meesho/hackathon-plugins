@@ -2,12 +2,13 @@ param(
   [string]$Image = "hackathon-app:final",
   [int]$FrontendPort = $(if ($env:FRONTEND_PORT) { [int]$env:FRONTEND_PORT } else { 9080 }),
   [int]$BackendPort = $(if ($env:BACKEND_PORT) { [int]$env:BACKEND_PORT } else { 8090 }),
+  [string]$DataDir = $(if ($env:DATA_DIR) { $env:DATA_DIR } else { Join-Path (Get-Location) "data" }),
   [switch]$Help
 )
 
 if ($Help) {
   @"
-Usage: .\check_submission.ps1 [-Image hackathon-app:final] [-FrontendPort 9080] [-BackendPort 8090]
+Usage: .\check_submission.ps1 [-Image hackathon-app:final] [-FrontendPort 9080] [-BackendPort 8090] [-DataDir .\data]
 
 Builds and smoke-tests the final single image, checks GitHub remote status,
 and scans committed files for obvious secrets.
@@ -60,6 +61,7 @@ function Test-PortAvailable {
 Test-PortAvailable -Port $FrontendPort -Label "Frontend"
 Test-PortAvailable -Port $BackendPort -Label "Backend"
 if ($failed) { exit 1 }
+New-Item -ItemType Directory -Force $DataDir | Out-Null
 
 if (Test-Path "Dockerfile") {
   Write-Host "Building image $Image"
@@ -69,8 +71,14 @@ if (Test-Path "Dockerfile") {
 
 $container = "hackathon-final-check-$([System.Guid]::NewGuid().ToString('N').Substring(0,8))"
 try {
-  docker run -d --name $container -p "${FrontendPort}:9080" -p "${BackendPort}:8090" $Image | Out-Null
-  if ($LASTEXITCODE -eq 0) { Pass "container starts" } else { Fail "container failed to start"; exit 1 }
+  docker run -d --name $container -p "${FrontendPort}:9080" -p "${BackendPort}:8090" -v "${DataDir}:/app/data" $Image | Out-Null
+  if ($LASTEXITCODE -eq 0) {
+    Pass "container starts"
+    Pass "repo-local SQLite data directory mounted: $DataDir -> /app/data"
+  } else {
+    Fail "container failed to start"
+    exit 1
+  }
 
   $ready = $false
   for ($i = 0; $i -lt 45; $i++) {

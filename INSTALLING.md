@@ -52,6 +52,65 @@ an extra folder (e.g. `.claude/skills/skills/hackathon-bootstrap/`) — the agen
 
 ---
 
+## Quick terminal install
+
+Run these commands from the terminal after this repo is on your machine.
+
+### macOS / Linux — Codex
+
+```bash
+cd /path/to/skills
+chmod +x scripts/install-skills.sh
+./scripts/install-skills.sh --list
+./scripts/install-skills.sh --agent codex
+ls "${CODEX_HOME:-$HOME/.codex}/skills" | grep hackathon
+```
+
+### macOS / Linux — Claude Code
+
+```bash
+cd /path/to/skills
+chmod +x scripts/install-skills.sh
+./scripts/install-skills.sh --list
+./scripts/install-skills.sh --agent claude
+ls "$HOME/.claude/skills" | grep hackathon
+```
+
+For a single project only, install into that project's `.claude/skills` directory:
+
+```bash
+cd /path/to/skills
+./scripts/install-skills.sh --agent claude --dest /path/to/hackathon-project/.claude/skills
+```
+
+### Windows PowerShell — Codex
+
+```powershell
+Set-Location C:\path\to\skills
+.\scripts\install-skills.ps1 -List
+.\scripts\install-skills.ps1 -Agent codex
+Get-ChildItem "$HOME\.codex\skills" -Directory | Where-Object Name -Like "hackathon-*"
+```
+
+### Windows PowerShell — Claude Code
+
+```powershell
+Set-Location C:\path\to\skills
+.\scripts\install-skills.ps1 -List
+.\scripts\install-skills.ps1 -Agent claude
+Get-ChildItem "$HOME\.claude\skills" -Directory | Where-Object Name -Like "hackathon-*"
+```
+
+If PowerShell blocks local scripts for this terminal session:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+```
+
+After installing, restart Codex or Claude Code so it re-scans the skills directory.
+
+---
+
 ## Method 1 — Automated script (recommended)
 
 The script copies every skill folder into the right place and refuses to clobber an existing
@@ -62,21 +121,26 @@ install unless you pass `--force`.
 macOS / Linux:
 
 ```bash
+cd /path/to/skills
+chmod +x scripts/install-skills.sh
+
 # Personal (default destination: ~/.claude/skills)
 ./scripts/install-skills.sh --agent claude
 
 # This project only
-./scripts/install-skills.sh --agent claude --dest "$(pwd)/.claude/skills"
+./scripts/install-skills.sh --agent claude --dest /path/to/hackathon-project/.claude/skills
 ```
 
 Windows PowerShell:
 
 ```powershell
+Set-Location C:\path\to\skills
+
 # Personal (default destination: ~\.claude\skills)
 .\scripts\install-skills.ps1 -Agent claude
 
 # This project only
-.\scripts\install-skills.ps1 -Agent claude -Dest "$PWD\.claude\skills"
+.\scripts\install-skills.ps1 -Agent claude -Dest C:\path\to\hackathon-project\.claude\skills
 ```
 
 ### Codex
@@ -84,12 +148,15 @@ Windows PowerShell:
 macOS / Linux:
 
 ```bash
+cd /path/to/skills
+chmod +x scripts/install-skills.sh
 ./scripts/install-skills.sh --agent codex
 ```
 
 Windows PowerShell:
 
 ```powershell
+Set-Location C:\path\to\skills
 .\scripts\install-skills.ps1 -Agent codex
 ```
 
@@ -105,6 +172,8 @@ Windows PowerShell:
 Examples:
 
 ```bash
+cd /path/to/skills
+
 # Just the two you need right now
 ./scripts/install-skills.sh --agent claude --skills hackathon-bootstrap,hackathon-preview
 
@@ -146,9 +215,9 @@ literally all the "install" is.
 
 ## Method 3 — Use straight from this repo (no copy)
 
-Because this repo already keeps the skills under `BUILDATHON/.claude/skills/`, if you open
-**this folder** as your project in Claude Code, the skills are already active — no install
-step at all. Use this when you are working inside the BUILDATHON repo itself.
+If an agent has been pointed directly at this `skills/` folder, it can read and use the
+skill folders in place. Use this only when your agent workflow explicitly supports loading
+skills from the current repo without copying them.
 
 To reuse them in a different project without copying, point that project's
 `.claude/skills/` at this repo with a symlink:

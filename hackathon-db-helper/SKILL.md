@@ -23,8 +23,11 @@ Handle database work without making the participant learn SQL. Keep data structu
 
 - Never drop tables or delete data unless the participant explicitly asks to clear test data.
 - Prefer additive changes: new columns with defaults, new tables, new indexes.
-- Use `INT AUTO_INCREMENT` or `CHAR(36)` IDs; avoid complex composite keys.
+- Use `id INTEGER PRIMARY KEY AUTOINCREMENT` IDs unless the project already uses UUIDs; avoid complex composite keys.
 - Use `created_at` timestamps for participant-created records.
+- Account for SQLite migration limits before changing existing tables; do not assume MySQL/Postgres `ALTER TABLE` behavior.
+- Store Docker SQLite data under `/app/data`, backed by the repo-local ignored `data/` directory.
+- Keep Dockerfiles on Debian slim images; do not switch to Alpine for SQLite.
 - Keep sample seed data small and obviously fake.
 
 ## Memory

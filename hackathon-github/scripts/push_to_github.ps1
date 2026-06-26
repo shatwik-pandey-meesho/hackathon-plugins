@@ -29,6 +29,7 @@ if (-not (Test-Path ".gitignore")) {
   @"
 .env
 .env.*
+!.env.example
 *.pem
 *.key
 *service-account*.json
