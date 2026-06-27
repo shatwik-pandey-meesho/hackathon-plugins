@@ -1,0 +1,11 @@
+# Generated skill bundles
+dist/
+
+# Runtime / local junk
+.DS_Store
+data/
+.agent-memory/
+node_modules/
+*.db
+*.sqlite
+*.sqlite3

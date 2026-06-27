@@ -12,19 +12,21 @@ Check the complete judging path end to end. The output should be a clear pass/fa
 ## Workflow
 
 1. Read `references/final-checklist.md`.
-2. Run `scripts/check_submission.sh` from the project root.
-3. Build and smoke-test the image if the participant wants a real final check.
-4. Confirm the GitHub remote and latest commit.
-5. Confirm the registry image URL if GCP push has happened.
-6. Summarize in plain language:
+2. Confirm with the participant: "Is this the final image for submission?" If yes, ask the data question before any final build: "Should the final image start with a clean, empty database, or carry a copy of your current saved data baked inside?" Default to a clean start unless the demo needs pre-filled data. Hand the chosen mode to `hackathon-single-image-build`, which owns the build steps for each mode.
+3. Run `scripts/check_submission.sh` from the project root.
+4. Build and smoke-test the image if the participant wants a real final check. For a final image, also confirm it starts standalone with no bind mount (`docker run --rm -p 9080:9080 -p 8090:8090 IMAGE`).
+5. Confirm the GitHub remote and latest commit.
+6. Confirm the registry image URL if GCP push has happened.
+7. Summarize in plain language:
    - Ready
    - Needs fixing before judging
    - Could not check because a tool/account is missing
 
 ## Required Green Checks
 
+- For a final image, the participant has confirmed it is final and chosen a data mode (clean start, or baked-in data).
 - One Docker image builds.
-- The image starts with `docker run`.
+- The image starts with `docker run`, and a final image also starts standalone with no bind mount.
 - A browser can load the frontend on `http://localhost:9080`.
 - Backend health or API responds on `http://localhost:8090`.
 - SQLite initializes.

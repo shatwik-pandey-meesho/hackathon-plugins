@@ -13,6 +13,27 @@ The final image must include everything judges need to start the project.
 - Backend listens on port `8090`.
 - Backend `/health` succeeds after startup.
 
+## Final Image Data Mode
+
+When the participant confirms this is the final submission image, decide the data mode with them before building. The final image must run standalone with `docker run` and no bind mount, so it cannot depend on the participant's local `data/` directory.
+
+### Clean start (default, recommended)
+
+- Do not copy `data/hackathon.db` into the image.
+- Keep `data/` excluded in `.dockerignore` so no host database is captured.
+- The entrypoint creates `/app/data` and initializes a fresh database from `db/init.sql` on first run.
+- Judges always see a predictable empty app; nothing links back to the participant's machine.
+
+### Baked-in data (self-contained snapshot)
+
+- Use only when the demo must show pre-filled records without any mount.
+- Build with a current, clean `data/hackathon.db` (no secrets, only obviously fake/demo data).
+- Copy it into the image explicitly, for example `COPY data/hackathon.db /app/data/hackathon.db`. If `data/` is in `.dockerignore`, force-include just the database file (for example `!data/hackathon.db`) rather than un-ignoring the whole directory.
+- The entrypoint must still create `/app/data` if absent and must not overwrite an existing database file, so the baked-in data survives startup.
+- Document the baked-in data in the README so judges know the records are intentional.
+
+In both modes, the standalone run command for judging is `docker run --rm -p 9080:9080 -p 8090:8090 IMAGE`. The repo-local `data/` bind mount remains available for local development and preview but is not required for the final image.
+
 ## Base Image
 
 - All stages must use Debian slim base images. Do not use Alpine.
