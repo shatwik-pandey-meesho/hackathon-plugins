@@ -6,8 +6,8 @@
   "author": {
     "name": "shatwik-pandey-meesho"
   },
-  "homepage": "https://github.com/shatwik-pandey-meesho/hackathon-skills",
-  "repository": "https://github.com/shatwik-pandey-meesho/hackathon-skills",
+  "homepage": "https://github.com/shatwik-pandey-meesho/hackathon-plugins",
+  "repository": "https://github.com/shatwik-pandey-meesho/hackathon-plugins",
   "license": "MIT",
   "keywords": ["hackathon", "skills", "docker", "react", "sqlite", "scaffolding"]
 }

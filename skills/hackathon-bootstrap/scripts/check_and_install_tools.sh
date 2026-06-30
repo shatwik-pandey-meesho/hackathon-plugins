@@ -9,7 +9,7 @@ elif [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
 Usage: check_and_install_tools.sh [--install]
 
 Checks tools needed for the core hackathon stack:
-git, docker, docker compose, node, npm, go, sqlite3, and gh.
+git, docker, docker compose, node, npm, go, sqlite3, and zip.
 
 Default mode only reports missing tools. --install attempts best-effort installs
 on macOS with Homebrew or Debian/Ubuntu with apt.
@@ -37,14 +37,14 @@ install_macos() {
     echo "Homebrew is missing. Install it from https://brew.sh, then rerun this script."
     return 1
   fi
-  brew install git node go gh sqlite
+  brew install git node go sqlite zip
   brew install --cask docker || true
   echo "Docker Desktop may need to be opened once before Docker commands work."
 }
 
 install_linux_apt() {
   sudo apt-get update
-  sudo apt-get install -y git curl ca-certificates gnupg nodejs npm golang-go sqlite3 docker.io docker-compose-plugin gh
+  sudo apt-get install -y git curl ca-certificates gnupg nodejs npm golang-go sqlite3 docker.io docker-compose-plugin zip
   echo "You may need to log out and back in after adding your user to the docker group:"
   echo "  sudo usermod -aG docker \$USER"
 }
@@ -60,7 +60,7 @@ status "node" "command -v node"
 status "npm" "command -v npm"
 status "go" "command -v go"
 status "sqlite3" "command -v sqlite3"
-status "GitHub CLI gh" "command -v gh"
+status "zip" "command -v zip"
 
 if [[ ${#MISSING[@]} -eq 0 ]]; then
   echo "All core tools are available."

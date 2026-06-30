@@ -5,8 +5,8 @@ if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
   cat <<'USAGE'
 Usage: check_submission.sh [image:tag]
 
-Builds and smoke-tests the final single image, checks GitHub remote status,
-and scans committed files for obvious secrets.
+Builds and smoke-tests the final single image and scans project files for
+obvious secrets. Zipping code for submission is handled by hackathon-zip-code.
 Environment:
   FRONTEND_PORT=9080
   BACKEND_PORT=8090
@@ -31,20 +31,35 @@ have() {
 
 [[ -f Dockerfile ]] && pass "Dockerfile exists" || fail "Dockerfile missing"
 [[ -f README.md ]] && pass "README exists" || warn "README missing"
-[[ -d .git ]] && pass "git repo exists" || warn "git repo missing"
 
-if [[ -d .git ]] && git remote get-url origin >/dev/null 2>&1; then
-  pass "GitHub remote configured: $(git remote get-url origin)"
+# Scan the project files (not git) for secret-looking files and content.
+SECRET_FILES="$(find . \
+  -path ./node_modules -prune -o \
+  -path ./.git -prune -o \
+  -path ./data -prune -o \
+  -path ./dist -prune -o \
+  -type f \( -name '.env' -o -name '.env.*' -o -name '*service-account*.json' -o -name '*.pem' -o -name '*.key' \) \
+  ! -name '.env.example' -print 2>/dev/null || true)"
+if [[ -n "$SECRET_FILES" ]]; then
+  fail "secret-looking files present (keep these out of the uploaded zip):"
+  printf '      %s\n' $SECRET_FILES
 else
-  warn "GitHub remote not configured"
+  pass "no secret-looking files in the project"
 fi
 
-if [[ -d .git ]]; then
-  if git grep -n -E '(BEGIN (RSA|OPENSSH) PRIVATE KEY|AIza[0-9A-Za-z_-]{35}|ghp_[0-9A-Za-z_]{30,}|password *= *[^ ]+)' HEAD -- . >/tmp/hackathon-secret-scan.txt 2>/dev/null; then
-    fail "possible secret found in committed files; inspect /tmp/hackathon-secret-scan.txt"
-  else
-    pass "no obvious committed secrets found"
-  fi
+if grep -RInE '(BEGIN (RSA|OPENSSH) PRIVATE KEY|AIza[0-9A-Za-z_-]{35}|password *= *[^ ]+)' \
+    --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=data --exclude-dir=dist \
+    . >/tmp/hackathon-secret-scan.txt 2>/dev/null; then
+  fail "possible secret found in project files; inspect /tmp/hackathon-secret-scan.txt"
+else
+  pass "no obvious secret content found"
+fi
+
+if grep -q '"code_zip"' .agent-memory/state.json 2>/dev/null \
+   && ! grep -qE '"code_zip" *: *(""|null)' .agent-memory/state.json 2>/dev/null; then
+  pass "code zip built (code_zip recorded) — remember to upload it to the organizer's folder by hand"
+else
+  warn "no code zip built yet; run hackathon-zip-code, then upload the zip to the organizer's folder manually"
 fi
 
 check_port_available() {
@@ -93,9 +108,9 @@ fi
 
 READY="false"
 for _ in $(seq 1 45); do
-  if have curl && curl -fsS "http://localhost:$BACKEND_PORT/health" >/dev/null 2>&1; then
+  if have curl && curl -fsS "http://localhost:$FRONTEND_PORT/api/health" >/dev/null 2>&1; then
     READY="true"
-    pass "health endpoint responds"
+    pass "backend responds through nginx at /api/health"
     if curl -fsS "http://localhost:$FRONTEND_PORT/" >/dev/null 2>&1; then
       pass "frontend responds"
       break
@@ -105,7 +120,7 @@ for _ in $(seq 1 45); do
 done
 
 if [[ "$READY" != "true" ]]; then
-  fail "app did not respond on frontend http://localhost:$FRONTEND_PORT and backend http://localhost:$BACKEND_PORT/health"
+  fail "app did not respond on frontend http://localhost:$FRONTEND_PORT/ and backend via nginx http://localhost:$FRONTEND_PORT/api/health (is nginx proxying /api to the backend?)"
   docker logs --tail=100 "$CONTAINER" || true
 fi
 

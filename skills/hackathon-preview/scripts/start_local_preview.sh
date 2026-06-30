@@ -114,7 +114,7 @@ if command -v docker >/dev/null 2>&1 && [[ -f Dockerfile ]]; then
   docker build -t "$IMAGE" .
   echo "Starting preview container:"
   echo "  Frontend: http://localhost:$FRONTEND_PORT"
-  echo "  Backend:  http://localhost:$BACKEND_PORT/health"
+  echo "  Backend:  http://localhost:$FRONTEND_PORT/api/health (through nginx / dev-server /api proxy)"
   echo "  Data:     $DATA_DIR mounted at /app/data"
   docker run --rm -p "$FRONTEND_PORT:9080" -p "$BACKEND_PORT:8090" -v "$DATA_DIR:/app/data" "$IMAGE"
   exit 0
@@ -125,7 +125,7 @@ if command -v docker >/dev/null 2>&1 && [[ -f docker-compose.yml || -f compose.y
   check_port_available "$BACKEND_PORT" "Backend"
   echo "Starting Docker Compose preview:"
   echo "  Frontend: http://localhost:$FRONTEND_PORT"
-  echo "  Backend:  http://localhost:$BACKEND_PORT/health"
+  echo "  Backend:  http://localhost:$FRONTEND_PORT/api/health (through nginx / dev-server /api proxy)"
   docker compose up --build
   exit 0
 fi
@@ -136,7 +136,7 @@ if [[ -f frontend/package.json ]] && [[ -f backend/package.json || -f backend/go
   mkdir -p "$DATA_DIR"
   echo "Starting source preview:"
   echo "  Frontend: http://localhost:$FRONTEND_PORT"
-  echo "  Backend:  http://localhost:$BACKEND_PORT/health"
+  echo "  Backend:  http://localhost:$FRONTEND_PORT/api/health (through nginx / dev-server /api proxy)"
   echo "  Data:     $DATA_DIR"
   if [[ -f backend/package.json ]]; then
     start_node_backend

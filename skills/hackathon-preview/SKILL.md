@@ -14,7 +14,7 @@ Make the app viewable with the least explanation possible. Prefer Docker preview
 1. Inspect the project for `Dockerfile`, `docker-compose.yml`, `compose.yml`, `package.json`, `frontend/`, and `backend/`.
 2. Run `scripts/start_local_preview.sh` from the project root.
 3. If the script fails, collect the exact failing command and logs, then use `hackathon-bugfix`.
-4. Give the participant the local URLs: frontend `http://localhost:9080` and backend health `http://localhost:8090/health`.
+4. Give the participant the local URLs: frontend `http://localhost:9080` and backend health `http://localhost:9080/api/health` (the backend is reached through nginx / the dev-server `/api` proxy, never a direct `8090` URL).
 5. Keep any long-running preview process open only when it is useful; do not leave hidden background processes without reporting them.
 
 ## Participant Language

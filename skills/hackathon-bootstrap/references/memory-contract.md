@@ -24,7 +24,7 @@ Use at least these keys:
 - `database`
 - `image_tag`
 - `registry_url`
-- `github_repo`
+- `code_zip`
 - `last_successful_step`
 - `current_status`
 - `current_blocker`

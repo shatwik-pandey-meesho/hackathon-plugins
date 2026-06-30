@@ -4,12 +4,17 @@
 > From inside Claude Code run:
 >
 > ```
-> /plugin marketplace add shatwik-pandey-meesho/hackathon-skills
-> /plugin install hackathon-skills@hackathon-skills
+> /plugin marketplace add shatwik-pandey-meesho/hackathon-plugins
+> /plugin install hackathon-skills@hackathon-plugins
 > ```
 >
 > That installs all ten skills at once (namespaced as `hackathon-skills:<name>`), no
-> clone or copy needed. The methods below are for Codex or for copying the folders by hand.
+> clone or copy needed. Prefer clicking over typing? See **Method 0 — Claude Code plugin UI**
+> just below. The other methods are for Codex or for copying the folders by hand.
+
+---
+
+## What you are installing
 
 This repo contains 10 skill folders under `skills/`:
 
@@ -20,19 +25,58 @@ This repo contains 10 skill folders under `skills/`:
 - `hackathon-db-helper`
 - `hackathon-single-image-build`
 - `hackathon-deploy-by-pushing-image`
-- `hackathon-github`
+- `hackathon-zip-code`
 - `hackathon-submission-check`
 - `hackathon-explainer`
 
-A "skill" is just a folder with a `SKILL.md` plus optional `references/` and `scripts/`.
-Installing means **putting these folders where your agent looks for skills**. Nothing is
-compiled and nothing runs during install — it is a plain folder copy.
+A "skill" is just a folder with a `SKILL.md` plus optional `references/` and `scripts/`. Installing
+means **making these folders available to your agent** — either as a Claude Code plugin (Method 0,
+recommended) or by copying the folders into a skills directory (the other methods). Nothing is
+compiled and nothing runs during install.
 
-> The installer copies skill folders only. It does **not** install Docker, Node.js, Go,
-> SQLite, or the GitHub CLI. Those are installed later by the
-> `hackathon-bootstrap` skill itself. Proxy uploads need Docker only.
+> Installing the skills does **not** install Docker, Node.js, Go, SQLite, or `zip`. Those are
+> installed later by the `hackathon-bootstrap` skill itself. Submitting code just builds a zip
+> (`hackathon-zip-code`) that the participant uploads by hand; proxy uploads need Docker only.
+
+### Which method should I use?
+
+| You are using… | Use |
+| --- | --- |
+| **Claude Code** (most participants) | **Method 0** (plugin UI) or the marketplace commands above |
+| Claude Code, but you want a local copy you can edit | Method 1 (script) or Method 2 (manual copy) |
+| **Codex** | Method 1 (`--agent codex`) or Method 4 |
+| An agent pointed straight at this repo | Method 3 |
 
 ---
+
+## Method 0 — Claude Code plugin UI (no commands)
+
+Install everything from Claude Code's built-in plugin manager, using the marketplace repo
+`https://github.com/shatwik-pandey-meesho/hackathon-plugins`.
+
+1. In Claude Code, run `/plugin` (or open **Settings → Plugins / Customize → Plugins**).
+2. Choose **Marketplaces** → **Add marketplace**.
+3. Paste the repo and confirm:
+
+   ```
+   https://github.com/shatwik-pandey-meesho/hackathon-plugins
+   ```
+
+   (The shorthand `shatwik-pandey-meesho/hackathon-plugins` also works.)
+4. Go back to **Plugins**, find **hackathon-skills** under the `hackathon-plugins` marketplace,
+   and choose **Install**.
+5. Restart or start a new session if prompted. All ten skills are now available, namespaced as
+   `hackathon-skills:hackathon-bootstrap`, `hackathon-skills:hackathon-bugfix`, and so on.
+
+To update later: **Plugins → Marketplaces → hackathon-plugins → Update**, or run
+`/plugin marketplace update hackathon-plugins`. The repo is public, so no token is needed.
+
+The equivalent typed commands are:
+
+```
+/plugin marketplace add shatwik-pandey-meesho/hackathon-plugins
+/plugin install hackathon-skills@hackathon-plugins
+```
 
 ## Where skills go
 
@@ -122,7 +166,7 @@ After installing, restart Codex or Claude Code so it re-scans the skills directo
 
 ---
 
-## Method 1 — Automated script (recommended)
+## Method 1 — Automated script (recommended for Codex or a local copy)
 
 The script copies every skill folder into the right place and refuses to clobber an existing
 install unless you pass `--force`.
@@ -257,7 +301,12 @@ harmless to other agents.
 
 ## Verify the install
 
-List what is installed:
+**If you installed the plugin (Method 0 / marketplace):** run `/plugin` and confirm
+**hackathon-skills** shows as installed under the `hackathon-plugins` marketplace. Type `/` and you
+will see the skills listed as `hackathon-skills:hackathon-bootstrap`, `hackathon-skills:hackathon-zip-code`,
+and so on.
+
+**If you copied the folders (script / manual):** list the skills directory:
 
 ```bash
 # Claude personal
@@ -269,29 +318,33 @@ ls .claude/skills
 
 You should see the 10 `hackathon-*` folders, each containing a `SKILL.md`.
 
-Then **restart the agent** (or start a new session) so it re-scans the skills directory.
-In Claude Code you can confirm by typing `/` and looking for the `hackathon-*` skills in
-the list, or by asking: *"start a new hackathon project"* — it should trigger
-`hackathon-bootstrap`.
+Either way, **restart the agent or start a new session** so it re-scans, then do a live check by
+asking: *"start a new hackathon project"* — it should trigger `hackathon-bootstrap`.
 
 ---
 
 ## Updating to a newer version
 
-Pull the latest changes in this repo, then re-run the installer with overwrite:
+**Plugin install (Method 0 / marketplace):** run `/plugin marketplace update hackathon-plugins`
+(or **Plugins → Marketplaces → hackathon-plugins → Update** in the UI). No re-install needed.
+
+**Script install:** pull the latest changes in this repo, then re-run the installer with overwrite:
 
 ```bash
 git pull
 ./scripts/install-skills.sh --agent claude --force
 ```
 
-Manual method: delete the old `hackathon-*` folders in your skills directory and re-copy.
+**Manual install:** delete the old `hackathon-*` folders in your skills directory and re-copy.
 
 ---
 
 ## Uninstall
 
-Delete the skill folders from your skills directory:
+**Plugin install:** run `/plugin`, find **hackathon-skills**, and choose **Uninstall** (and
+optionally remove the `hackathon-plugins` marketplace).
+
+**Script / manual install:** delete the skill folders from your skills directory:
 
 ```bash
 rm -rf ~/.claude/skills/hackathon-*

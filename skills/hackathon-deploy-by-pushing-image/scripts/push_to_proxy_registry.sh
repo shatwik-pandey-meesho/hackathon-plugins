@@ -5,7 +5,7 @@ PROXY_HOST=""
 LOGIN_USER="hackathon"
 TOKEN=""
 LOCAL_IMAGE=""
-GITHUB_USER=""
+USER_SLUG=""
 TAG="final"
 FRONTEND_PORT="${FRONTEND_PORT:-9080}"
 BACKEND_PORT="${BACKEND_PORT:-8090}"
@@ -17,17 +17,18 @@ usage() {
 Usage: push_to_proxy_registry.sh --proxy-host HOST --token TOKEN --local-image IMAGE [options]
 
 Logs in to a token-authenticated Docker proxy, verifies the local image starts,
-tags it as HOST/GITHUB_USER/GITHUB_USER:TAG, and pushes it.
+tags it as HOST/USER/USER:TAG, and pushes it.
 
 Required:
   --proxy-host HOST       Proxy registry host, for example hackathon-proxy-xxxxx.run.app
   --token TOKEN           Registry token or password. Can also use HACKATHON_PROXY_TOKEN.
   --local-image IMAGE     Existing local image to push, for example hackathon-app:final
+  --user SLUG             Identity slug for the image path. Pass the part of the participant's
+                          Meesho email before @ (for example priya.sharma). A full email is
+                          accepted and the part before @ is used. Can also use MEESHO_EMAIL.
 
 Options:
   --login-user USER       Docker login username. Default: hackathon
-  --github-user USER      GitHub username. If omitted, the script tries gh, git config,
-                          then the GitHub origin remote owner.
   --tag TAG               Final image tag. Default: final
   --data-dir DIR          Optional host data dir to mount to /app/data during smoke test.
                           Final images should normally pass without this.
@@ -35,7 +36,7 @@ Options:
   -h, --help              Show this help text.
 
 Final image URL:
-  HOST/GITHUB_USER/GITHUB_USER:TAG
+  HOST/USER/USER:TAG
 
 Example:
   HACKATHON_PROXY_TOKEN=hackathon2026 \
@@ -43,7 +44,7 @@ Example:
       --proxy-host hackathon-proxy-xxxxx.run.app \
       --login-user hackathon \
       --local-image hackathon-app:final \
-      --github-user team-alpha \
+      --user priya.sharma \
       --tag v1
 USAGE
 }
@@ -75,8 +76,8 @@ while [[ $# -gt 0 ]]; do
       LOCAL_IMAGE="${2:-}"
       shift 2
       ;;
-    --github-user)
-      GITHUB_USER="${2:-}"
+    --user)
+      USER_SLUG="${2:-}"
       shift 2
       ;;
     --tag)
@@ -118,43 +119,16 @@ PROXY_HOST="${PROXY_HOST#https://}"
 PROXY_HOST="${PROXY_HOST%/}"
 [[ "$PROXY_HOST" != */* ]] || fail "--proxy-host must be only the registry host, without a path."
 
-infer_github_user() {
-  if need_cmd gh; then
-    local gh_user
-    gh_user="$(gh api user --jq .login 2>/dev/null || true)"
-    if [[ -n "$gh_user" ]]; then
-      echo "$gh_user"
-      return 0
-    fi
-  fi
+[[ -n "$USER_SLUG" ]] || USER_SLUG="${MEESHO_EMAIL:-}"
+[[ -n "$USER_SLUG" ]] || fail "Could not determine the identity slug. Pass --user (the Meesho email name before @), or set MEESHO_EMAIL."
 
-  local config_user
-  config_user="$(git config --get github.user 2>/dev/null || true)"
-  if [[ -n "$config_user" ]]; then
-    echo "$config_user"
-    return 0
-  fi
-
-  local remote
-  remote="$(git remote get-url origin 2>/dev/null || true)"
-  if [[ "$remote" =~ github.com[:/]([^/]+)/ ]]; then
-    echo "${BASH_REMATCH[1]}"
-    return 0
-  fi
-
-  return 1
-}
-
-if [[ -z "$GITHUB_USER" ]]; then
-  GITHUB_USER="$(infer_github_user || true)"
-fi
-[[ -n "$GITHUB_USER" ]] || fail "Could not infer GitHub username. Pass --github-user."
-
-IMAGE_NAMESPACE="$(echo "$GITHUB_USER" | tr '[:upper:]' '[:lower:]')"
+# Accept a full email and use the part before @; then lowercase for Docker.
+USER_SLUG="${USER_SLUG%%@*}"
+IMAGE_NAMESPACE="$(echo "$USER_SLUG" | tr '[:upper:]' '[:lower:]')"
 IMAGE_NAME="$IMAGE_NAMESPACE"
 
 if [[ ! "$IMAGE_NAMESPACE" =~ ^[a-z0-9]+([._-][a-z0-9]+)*$ ]]; then
-  fail "GitHub username '$GITHUB_USER' becomes invalid Docker path '$IMAGE_NAMESPACE'. Pass a Docker-safe --github-user."
+  fail "Identity '$USER_SLUG' becomes invalid Docker path '$IMAGE_NAMESPACE'. Pass a Docker-safe --user."
 fi
 if [[ ! "$TAG" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]]; then
   fail "Invalid Docker tag '$TAG'. Use letters, numbers, underscores, dots, or dashes."
@@ -189,9 +163,9 @@ smoke_test_image() {
     || fail "Local smoke test container failed to start."
 
   for _ in $(seq 1 45); do
-    if curl -fsS "http://localhost:$BACKEND_PORT/health" >/dev/null 2>&1 \
-      && curl -fsS "http://localhost:$FRONTEND_PORT/" >/dev/null 2>&1; then
-      echo "Local image health check passed."
+    if curl -fsS "http://localhost:$FRONTEND_PORT/" >/dev/null 2>&1 \
+      && curl -fsS "http://localhost:$FRONTEND_PORT/api/health" >/dev/null 2>&1; then
+      echo "Local image health check passed (frontend and backend via nginx /api)."
       return 0
     fi
     sleep 2

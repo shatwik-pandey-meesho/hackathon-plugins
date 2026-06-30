@@ -128,7 +128,7 @@ if ((Get-Command docker -ErrorAction SilentlyContinue) -and (Test-Path "Dockerfi
   docker build -t $Image .
   Write-Host "Starting preview container:"
   Write-Host "  Frontend: http://localhost:$FrontendPort"
-  Write-Host "  Backend:  http://localhost:$BackendPort/health"
+  Write-Host "  Backend:  http://localhost:$FrontendPort/api/health (through nginx / dev-server /api proxy)"
   Write-Host "  Data:     $DataDir mounted at /app/data"
   docker run --rm -p "${FrontendPort}:9080" -p "${BackendPort}:8090" -v "${DataDir}:/app/data" $Image
   exit 0
@@ -139,7 +139,7 @@ if ((Get-Command docker -ErrorAction SilentlyContinue) -and ((Test-Path "docker-
   Test-PortAvailable -Port $BackendPort -Label "Backend"
   Write-Host "Starting Docker Compose preview:"
   Write-Host "  Frontend: http://localhost:$FrontendPort"
-  Write-Host "  Backend:  http://localhost:$BackendPort/health"
+  Write-Host "  Backend:  http://localhost:$FrontendPort/api/health (through nginx / dev-server /api proxy)"
   docker compose up --build
   exit 0
 }
@@ -150,7 +150,7 @@ if ((Test-Path "frontend/package.json") -and ((Test-Path "backend/package.json")
   New-Item -ItemType Directory -Force $DataDir | Out-Null
   Write-Host "Starting source preview:"
   Write-Host "  Frontend: http://localhost:$FrontendPort"
-  Write-Host "  Backend:  http://localhost:$BackendPort/health"
+  Write-Host "  Backend:  http://localhost:$FrontendPort/api/health (through nginx / dev-server /api proxy)"
   Write-Host "  Data:     $DataDir"
   $root = (Get-Location).Path
   $backendJob = $null

@@ -18,7 +18,18 @@ Claude or another agent should handle these ports during setup. If either port i
 
 SQLite data is stored as a repo-local file, normally `data/hackathon.db`. Docker runs mount
 the repo's ignored `data/` directory into the container at `/app/data`, so saved records
-survive container restarts while `.db` files stay out of Git.
+survive container restarts while `.db` files stay out of the uploaded zip.
+
+## Submitting code
+
+Source code is submitted as a **zip the participant uploads by hand** — no GitHub, no git, and
+no cloud connector. `hackathon-zip-code` builds a clean, source-only zip (secrets and `node_modules/`
+excluded) and tells the participant to upload that single file to the organizer's designated
+submission folder themselves.
+
+Separately, when pushing the judging image, `hackathon-deploy-by-pushing-image` **always asks for
+the participant's Meesho organization email** and uses it strictly to name the image
+(`PROXY_HOST/<name-before-@>/<name-before-@>:TAG`).
 
 ## Skills
 
@@ -29,7 +40,7 @@ survive container restarts while `.db` files stay out of Git.
 - `hackathon-db-helper`: make safe SQLite schema and data changes.
 - `hackathon-single-image-build`: build and smoke-test the final image.
 - `hackathon-deploy-by-pushing-image`: verify the image locally, then push it through the organizer Docker proxy.
-- `hackathon-github`: save the project to GitHub without committing secrets.
+- `hackathon-zip-code`: zip the source code into one clean file for the participant to upload by hand to the organizer's folder.
 - `hackathon-submission-check`: run the final judging readiness checklist.
 - `hackathon-explainer`: explain technical results in non-technical language.
 
@@ -43,7 +54,7 @@ These skills are usable by Codex, Claude, Gemini, or another terminal-capable ag
 
 - Codex: can use each `SKILL.md` as a native skill folder. `agents/openai.yaml` provides Codex UI metadata.
 - Claude or Gemini: can use the same folders when their agent runner is told to read the relevant `SKILL.md`, follow linked `references/`, and run scripts from `scripts/`.
-- Any terminal agent: should be given the repo path, the relevant skill folder, and permission rules for installs, Docker, GitHub,.
+- Any terminal agent: should be given the repo path, the relevant skill folder, and permission rules for installs and Docker.
 
 The only Codex-specific file is `agents/openai.yaml`. The workflows, references, and scripts are tool-agnostic.
 
@@ -56,14 +67,18 @@ Windows participants can use the PowerShell scripts in each `scripts/` folder. m
 This repo is a Claude Code plugin marketplace. From inside Claude Code, run:
 
 ```
-/plugin marketplace add shatwik-pandey-meesho/hackathon-skills
-/plugin install hackathon-skills@hackathon-skills
+/plugin marketplace add shatwik-pandey-meesho/hackathon-plugins
+/plugin install hackathon-skills@hackathon-plugins
 ```
 
 All ten skills install at once and load automatically, namespaced as
 `hackathon-skills:hackathon-bootstrap`, `hackathon-skills:hackathon-bugfix`, etc.
 No clone or copy step is needed. To update later, run
-`/plugin marketplace update hackathon-skills`. The repo is public, so no token is required.
+`/plugin marketplace update hackathon-plugins`. The repo is public, so no token is required.
+
+You can also do this without typing commands — see the **plugin UI** method in
+[INSTALLING.md](./INSTALLING.md) (`/plugin` → *Manage plugins* → add the
+`https://github.com/shatwik-pandey-meesho/hackathon-plugins` marketplace, then install).
 
 ### Script install (Codex, or copy into `.claude`)
 

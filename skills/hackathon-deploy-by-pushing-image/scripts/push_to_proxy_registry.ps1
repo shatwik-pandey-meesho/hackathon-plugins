@@ -3,7 +3,7 @@ param(
   [string]$LoginUser = "hackathon",
   [string]$Token = $env:HACKATHON_PROXY_TOKEN,
   [string]$LocalImage,
-  [string]$GithubUser,
+  [string]$User = $env:MEESHO_EMAIL,
   [string]$Tag = "final",
   [string]$DataDir,
   [int]$FrontendPort = $(if ($env:FRONTEND_PORT) { [int]$env:FRONTEND_PORT } else { 9080 }),
@@ -17,17 +17,18 @@ if ($Help) {
 Usage: .\push_to_proxy_registry.ps1 -ProxyHost HOST -Token TOKEN -LocalImage IMAGE [options]
 
 Logs in to a token-authenticated Docker proxy, verifies the local image starts,
-tags it as HOST/GITHUB_USER/GITHUB_USER:TAG, and pushes it.
+tags it as HOST/USER/USER:TAG, and pushes it.
 
 Required:
   -ProxyHost HOST       Proxy registry host, for example hackathon-proxy-xxxxx.run.app
   -Token TOKEN          Registry token or password. Can also use HACKATHON_PROXY_TOKEN.
   -LocalImage IMAGE     Existing local image to push, for example hackathon-app:final
+  -User SLUG            Identity slug for the image path. Pass the part of the participant's
+                        Meesho email before @ (for example priya.sharma). A full email is
+                        accepted and the part before @ is used. Can also use MEESHO_EMAIL.
 
 Options:
   -LoginUser USER       Docker login username. Default: hackathon
-  -GithubUser USER      GitHub username. If omitted, the script tries gh, git config,
-                        then the GitHub origin remote owner.
   -Tag TAG              Final image tag. Default: final
   -DataDir DIR          Optional host data dir to mount to /app/data during smoke test.
                         Final images should normally pass without this.
@@ -35,7 +36,7 @@ Options:
   -Help                 Show this help text.
 
 Final image URL:
-  HOST/GITHUB_USER/GITHUB_USER:TAG
+  HOST/USER/USER:TAG
 "@
   exit 0
 }
@@ -49,33 +50,6 @@ function Fail($Message) {
 
 function Test-Command($Name) {
   return [bool](Get-Command $Name -ErrorAction SilentlyContinue)
-}
-
-function Infer-GithubUser {
-  if (Test-Command "gh") {
-    try {
-      $ghUser = (& gh api user --jq .login 2>$null)
-      if (-not [string]::IsNullOrWhiteSpace($ghUser)) {
-        return $ghUser.Trim()
-      }
-    } catch {}
-  }
-
-  try {
-    $configUser = (& git config --get github.user 2>$null)
-    if (-not [string]::IsNullOrWhiteSpace($configUser)) {
-      return $configUser.Trim()
-    }
-  } catch {}
-
-  try {
-    $remote = (& git remote get-url origin 2>$null)
-    if ($remote -match "github\.com[:/]([^/]+)/") {
-      return $Matches[1]
-    }
-  } catch {}
-
-  return ""
 }
 
 if ([string]::IsNullOrWhiteSpace($ProxyHost)) { Fail "-ProxyHost is required." }
@@ -95,18 +69,17 @@ $ProxyHost = $ProxyHost -replace "^https?://", ""
 $ProxyHost = $ProxyHost.TrimEnd("/")
 if ($ProxyHost.Contains("/")) { Fail "-ProxyHost must be only the registry host, without a path." }
 
-if ([string]::IsNullOrWhiteSpace($GithubUser)) {
-  $GithubUser = Infer-GithubUser
-}
-if ([string]::IsNullOrWhiteSpace($GithubUser)) {
-  Fail "Could not infer GitHub username. Pass -GithubUser."
+if ([string]::IsNullOrWhiteSpace($User)) {
+  Fail "Could not determine the identity slug. Pass -User (the Meesho email name before @), or set MEESHO_EMAIL."
 }
 
-$imageNamespace = $GithubUser.ToLowerInvariant()
+# Accept a full email and use the part before @; then lowercase for Docker.
+$slug = ($User -split "@")[0]
+$imageNamespace = $slug.ToLowerInvariant()
 $imageName = $imageNamespace
 
 if ($imageNamespace -notmatch "^[a-z0-9]+([._-][a-z0-9]+)*$") {
-  Fail "GitHub username '$GithubUser' becomes invalid Docker path '$imageNamespace'. Pass a Docker-safe -GithubUser."
+  Fail "Identity '$slug' becomes invalid Docker path '$imageNamespace'. Pass a Docker-safe -User."
 }
 if ($Tag -notmatch "^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$") {
   Fail "Invalid Docker tag '$Tag'. Use letters, numbers, underscores, dots, or dashes."
@@ -143,7 +116,7 @@ function Smoke-TestImage {
       $backendOk = $false
       $frontendOk = $false
       try {
-        curl -fsS "http://localhost:$BackendPort/health" *> $null
+        curl -fsS "http://localhost:$FrontendPort/api/health" *> $null
         $backendOk = ($LASTEXITCODE -eq 0)
       } catch {}
       try {
@@ -152,7 +125,7 @@ function Smoke-TestImage {
       } catch {}
 
       if ($backendOk -and $frontendOk) {
-        Write-Host "Local image health check passed."
+        Write-Host "Local image health check passed (frontend and backend via nginx /api)."
         return
       }
 

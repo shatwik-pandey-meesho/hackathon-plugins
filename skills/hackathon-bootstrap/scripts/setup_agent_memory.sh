@@ -27,7 +27,7 @@ if [[ ! -f "$MEMORY_DIR/state.json" ]]; then
   "database": "sqlite",
   "image_tag": "",
   "registry_url": "",
-  "github_repo": "",
+  "code_zip": "",
   "last_successful_step": "",
   "current_status": "bootstrapping",
   "current_blocker": "",
@@ -46,7 +46,7 @@ if [[ ! -f "$MEMORY_DIR/session.md" ]]; then
 - Project idea:
 - Stack:
 - Frontend URL: http://localhost:9080
-- Backend health URL: http://localhost:8090/health
+- Backend health URL (through nginx /api): http://localhost:9080/api/health
 - What works:
 - What is blocked:
 - Most recent changes:

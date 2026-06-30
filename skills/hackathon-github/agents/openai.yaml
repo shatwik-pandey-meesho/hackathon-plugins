@@ -1,4 +1,0 @@
-interface:
-  display_name: "Hackathon GitHub"
-  short_description: "Save and push code to GitHub"
-  default_prompt: "Use $hackathon-github to save my hackathon project on GitHub."

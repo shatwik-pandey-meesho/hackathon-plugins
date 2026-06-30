@@ -45,8 +45,9 @@ if command -v lsof >/dev/null 2>&1; then
 fi
 
 if command -v curl >/dev/null 2>&1; then
-  run_capture "backend-health-localhost-8090" curl -fsS http://localhost:8090/health
   run_capture "frontend-root-localhost-9080" curl -I http://localhost:9080/
+  run_capture "backend-via-nginx-9080-api-health" curl -fsS http://localhost:9080/api/health
+  run_capture "backend-direct-8090-api-health" curl -fsS http://localhost:8090/api/health
 fi
 
 echo "Diagnostics collected. Read the files in $OUT."

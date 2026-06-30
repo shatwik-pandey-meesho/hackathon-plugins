@@ -1,6 +1,6 @@
 ---
 name: hackathon-explainer
-description: "Explain hackathon project state, errors, code changes, Docker, GitHub, proxy registry, SQLite, React, Node.js, or Go in plain language for non-technical participants and organizers. Use when the user asks what changed, what an error means, what to do next, how judges will run the app, or how to describe the project for submission."
+description: "Explain hackathon project state, errors, code changes, Docker, code zipping/submission, proxy registry, SQLite, React, Node.js, or Go in plain language for non-technical participants and organizers. Use when the user asks what changed, what an error means, what to do next, how judges will run the app, or how to describe the project for submission."
 ---
 
 # Hackathon Explainer

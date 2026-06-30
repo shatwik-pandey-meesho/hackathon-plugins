@@ -18,7 +18,7 @@ SKILLS=(
   "hackathon-db-helper"
   "hackathon-single-image-build"
   "hackathon-deploy-by-pushing-image"
-  "hackathon-github"
+  "hackathon-zip-code"
   "hackathon-submission-check"
   "hackathon-explainer"
 )

@@ -18,16 +18,17 @@ Package the whole project into one runnable image for judges. The goal is not pr
      - **Baked-in data (self-contained snapshot):** the current `data/hackathon.db` is copied into the image at build time, so judges see your existing records even when they run the image with no folder mounted. Use this only when the demo needs pre-filled data.
    - Either way, the final image must run standalone with `docker run` and no bind mount and no link to the participant's machine. Follow the data-mode steps in `references/single-image-contract.md`.
 3. Inspect `Dockerfile`, `.dockerignore`, `frontend/`, `backend/`, and `db/`.
-4. If missing, create a Dockerfile that builds React, builds Node.js or Go, initializes the SQLite schema, and starts the app. Use Debian slim base images only (`node:20-bookworm-slim` for Node stages, `golang:1.22-bookworm` + `debian:bookworm-slim` for Go). Never use Alpine because musl libc breaks SQLite native builds for beginners. For Node backends using native SQLite packages such as `better-sqlite3`, install `python3`, `make`, and `g++` in the build stage before `npm install` or `npm ci`.
+4. If missing, create a Dockerfile that builds React, builds Node.js or Go, initializes the SQLite schema, serves the React build through **nginx on port `9080`**, reverse-proxies `/api/` to the backend on `127.0.0.1:8090`, and starts both processes (backend in the background, nginx in the foreground). Use Debian slim base images only (`node:20-bookworm-slim` for Node stages, `golang:1.22-bookworm` + `debian:bookworm-slim` for Go) and install `nginx` in the runtime stage. Never use Alpine because musl libc breaks SQLite native builds for beginners. For Node backends using native SQLite packages such as `better-sqlite3`, install `python3`, `make`, and `g++` in the build stage before `npm install` or `npm ci`. The nginx config and entrypoint pattern are in `references/single-image-contract.md`.
 5. Run `scripts/build_single_image.sh <image-name>:<tag>`.
-6. Confirm the container starts and `GET /health` or the root page responds. For a final image, verify it also starts with no bind mount (`docker run --rm -p 9080:9080 -p 8090:8090 IMAGE`) so it has no link to the participant's machine.
+6. Confirm the container starts, the root page responds at `http://localhost:9080/`, and the backend responds **through nginx** at `http://localhost:9080/api/health`. For a final image, verify it also starts with no bind mount (`docker run --rm -p 9080:9080 -p 8090:8090 IMAGE`) so it has no link to the participant's machine.
 7. Report the image tag, the chosen data mode (clean start or baked-in data), and the exact `docker run` command.
 
 ## Required Behavior
 
 - One image is enough to run the project.
-- The frontend listens on container port `9080`.
-- The backend listens on container port `8090`.
+- **nginx serves the React build on container port `9080`** and reverse-proxies `/api/` to the backend on `127.0.0.1:8090`. The frontend calls the backend only via the relative `/api/...` path — never a hardcoded host or port — so the app works behind any randomly assigned domain or subdomain. This routing is mandatory.
+- The backend listens on container port `8090`. It may stay exposed for direct debugging, but the app's frontend→backend traffic always goes through nginx `/api`.
+- `GET /api/health` succeeds through nginx at `http://localhost:9080/api/health`.
 - SQLite data must live under `/app/data` in the container, with the repo's local `data/` directory bind-mounted there for preview, smoke tests, and judging.
 - The image must not require local source files after build.
 - Do not rely on Docker Compose for final judging unless the organizer explicitly permits it.

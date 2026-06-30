@@ -41,8 +41,9 @@ Capture "port-9080-frontend" { Get-NetTCPConnection -LocalPort 9080 -ErrorAction
 Capture "port-8090-backend" { Get-NetTCPConnection -LocalPort 8090 -ErrorAction SilentlyContinue }
 
 if (Get-Command curl.exe -ErrorAction SilentlyContinue) {
-  Capture "backend-health-localhost-8090" { curl.exe -fsS http://localhost:8090/health }
   Capture "frontend-root-localhost-9080" { curl.exe -I http://localhost:9080/ }
+  Capture "backend-via-nginx-9080-api-health" { curl.exe -fsS http://localhost:9080/api/health }
+  Capture "backend-direct-8090-api-health" { curl.exe -fsS http://localhost:8090/api/health }
 }
 
 Write-Host "Diagnostics collected. Read the files in $OutDir."

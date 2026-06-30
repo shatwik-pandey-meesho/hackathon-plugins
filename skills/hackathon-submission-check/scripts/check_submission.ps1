@@ -10,8 +10,8 @@ if ($Help) {
   @"
 Usage: .\check_submission.ps1 [-Image hackathon-app:final] [-FrontendPort 9080] [-BackendPort 8090] [-DataDir .\data]
 
-Builds and smoke-tests the final single image, checks GitHub remote status,
-and scans committed files for obvious secrets.
+Builds and smoke-tests the final single image and scans project files for
+obvious secrets. Zipping code for submission is handled by hackathon-zip-code.
 "@
   exit 0
 }
@@ -25,24 +25,38 @@ function Warn($msg) { Write-Host "WARN  $msg" }
 
 if (Test-Path "Dockerfile") { Pass "Dockerfile exists" } else { Fail "Dockerfile missing" }
 if (Test-Path "README.md") { Pass "README exists" } else { Warn "README missing" }
-if (Test-Path ".git") { Pass "git repo exists" } else { Warn "git repo missing" }
 
-if (Test-Path ".git") {
-  git remote get-url origin *> $null
-  if ($LASTEXITCODE -eq 0) {
-    Pass "GitHub remote configured: $(git remote get-url origin)"
-  } else {
-    Warn "GitHub remote not configured"
-  }
+# Scan project files (not git) for secret-looking files and content.
+$skipDirs = @('node_modules', '.git', 'data', 'dist')
+$secretFiles = Get-ChildItem -Recurse -File -Force -ErrorAction SilentlyContinue | Where-Object {
+  $rel = $_.FullName.Substring((Get-Location).Path.Length).TrimStart('\','/')
+  $top = ($rel -split '[\\/]')[0]
+  if ($skipDirs -contains $top) { return $false }
+  if ($_.Name -eq '.env.example') { return $false }
+  ($_.Name -eq '.env' -or $_.Name -like '.env.*' -or $_.Name -like '*.pem' -or $_.Name -like '*.key' -or $_.Name -like '*service-account*.json')
+}
+if ($secretFiles) {
+  Fail "secret-looking files present (keep these out of the uploaded zip): $($secretFiles.FullName -join ', ')"
+} else {
+  Pass "no secret-looking files in the project"
+}
 
-  $secretPattern = 'BEGIN (RSA|OPENSSH) PRIVATE KEY|AIza[0-9A-Za-z_-]{35}|ghp_[0-9A-Za-z_]{30,}|password *= *[^ ]+'
-  $matches = git grep -n -E $secretPattern HEAD -- . 2>$null
-  if ($matches) {
-    $matches | Out-File -FilePath "$env:TEMP\hackathon-secret-scan.txt" -Encoding utf8
-    Fail "possible secret found in committed files; inspect $env:TEMP\hackathon-secret-scan.txt"
-  } else {
-    Pass "no obvious committed secrets found"
-  }
+$secretPattern = 'BEGIN (RSA|OPENSSH) PRIVATE KEY|AIza[0-9A-Za-z_-]{35}|password *= *[^ ]+'
+$contentHits = Get-ChildItem -Recurse -File -Force -ErrorAction SilentlyContinue | Where-Object {
+  $top = ($_.FullName.Substring((Get-Location).Path.Length).TrimStart('\','/') -split '[\\/]')[0]
+  -not ($skipDirs -contains $top)
+} | Select-String -Pattern $secretPattern -ErrorAction SilentlyContinue
+if ($contentHits) {
+  $contentHits | Out-File -FilePath "$env:TEMP\hackathon-secret-scan.txt" -Encoding utf8
+  Fail "possible secret found in project files; inspect $env:TEMP\hackathon-secret-scan.txt"
+} else {
+  Pass "no obvious secret content found"
+}
+
+if ((Test-Path ".agent-memory/state.json") -and ((Get-Content -Raw ".agent-memory/state.json") -match '"code_zip"\s*:\s*"[^"]+"')) {
+  Pass "code zip built (code_zip recorded) - remember to upload it to the organizer's folder by hand"
+} else {
+  Warn "no code zip built yet; run hackathon-zip-code, then upload the zip to the organizer's folder manually"
 }
 
 if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
@@ -83,8 +97,8 @@ try {
   $ready = $false
   for ($i = 0; $i -lt 45; $i++) {
     try {
-      curl.exe -fsS "http://localhost:$BackendPort/health" | Out-Null
-      Pass "health endpoint responds"
+      curl.exe -fsS "http://localhost:$FrontendPort/api/health" | Out-Null
+      Pass "backend responds through nginx at /api/health"
       try {
         curl.exe -fsS "http://localhost:$FrontendPort/" | Out-Null
         Pass "frontend responds"
@@ -99,7 +113,7 @@ try {
   }
 
   if (-not $ready) {
-    Fail "app did not respond on frontend http://localhost:$FrontendPort and backend http://localhost:$BackendPort/health"
+    Fail "app did not respond on frontend http://localhost:$FrontendPort/ and backend via nginx http://localhost:$FrontendPort/api/health (is nginx proxying /api to the backend?)"
     docker logs --tail=100 $container
   }
 } finally {

@@ -11,7 +11,10 @@ Build features as a complete vertical slice:
 ## Defaults
 
 - Use REST JSON APIs.
-- Use `/api/...` route prefixes.
+- Use `/api/...` route prefixes on the backend.
+- From the frontend, call the backend with same-origin relative paths like `fetch('/api/...')`.
+  Never hardcode a host or port (no `http://localhost:8090`); nginx (in the image) and the dev
+  server (locally) proxy `/api` to the backend, so the app works on any deployed domain.
 - Use parameterized SQL only.
 - Return clear JSON errors: `{ "error": "message" }`.
 - Keep form fields few and obvious.

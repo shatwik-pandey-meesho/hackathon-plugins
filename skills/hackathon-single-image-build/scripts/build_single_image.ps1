@@ -49,12 +49,12 @@ try {
   Write-Host "Starting smoke test container"
   docker run -d --name $container -p "${FrontendPort}:9080" -p "${BackendPort}:8090" -v "${DataDir}:/app/data" $Image | Out-Null
 
-  Write-Host "Waiting for backend on http://localhost:$BackendPort/health and frontend on http://localhost:$FrontendPort"
+  Write-Host "Waiting for frontend on http://localhost:$FrontendPort/ and backend via nginx on http://localhost:$FrontendPort/api/health"
   for ($i = 0; $i -lt 45; $i++) {
     try {
-      curl.exe -fsS "http://localhost:$BackendPort/health" | Out-Null
       curl.exe -fsS "http://localhost:$FrontendPort/" | Out-Null
-      Write-Host "Frontend and backend checks passed."
+      curl.exe -fsS "http://localhost:$FrontendPort/api/health" | Out-Null
+      Write-Host "Frontend and backend-through-nginx (/api) checks passed."
       Write-Host "Image ready: $Image"
       Write-Host "Run command: docker run --rm -p 9080:9080 -p 8090:8090 -v ${PWD}/data:/app/data $Image"
       exit 0

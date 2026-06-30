@@ -1,11 +1,71 @@
 # Using the Hackathon Skills
 
-This guide shows how the 10 skills work together across a hackathon, then walks through a
-**complete example project** from empty laptop to judge-ready image.
+This guide shows how the 10 skills work together across a hackathon. It starts with a short
+**walkthrough of how to actually use them**, then the **full skill list**, the guardrails, and a
+**complete worked example** (RecipeBox) from empty laptop to judge-ready image.
 
-You do **not** call skills by name or memorize commands. You talk to your agent in plain
-language, and it picks the matching skill automatically. The skill names below are only so
-you understand what is happening under the hood.
+You usually do **not** call skills by name or memorize commands — you talk to Claude Code in plain
+language and it picks the matching skill automatically. (You *can* also invoke one explicitly with
+`/`; see below.) The skill names here are only so you understand what is happening under the hood.
+
+---
+
+## Before you start
+
+1. **Install the skills once** — see [INSTALLING.md](./INSTALLING.md). The quickest way is the
+   Claude Code plugin marketplace, from inside Claude Code:
+
+   ```
+   /plugin marketplace add shatwik-pandey-meesho/hackathon-plugins
+   /plugin install hackathon-skills@hackathon-plugins
+   ```
+
+2. **Open your hackathon project folder** in Claude Code (an empty folder is fine for a new
+   project) — not the skills repo. Everything the skills do happens inside that project folder.
+3. You do **not** need to pre-install Docker, Node, Go, or anything else. The first skill
+   (`hackathon-bootstrap`) checks your tools and offers to install whatever is missing.
+
+---
+
+## How to use a skill
+
+You drive everything by **talking to Claude Code in plain language**. A skill runs one of two ways:
+
+- **Automatically (the normal case):** just say what you want — *"set up my laptop and start a new
+  project"*, *"show me the app"*, *"the page is blank, fix it"*. Claude reads the skill descriptions
+  and picks the matching one. You never have to remember skill names.
+- **Explicitly (when you want to force one):** type `/` and choose the skill, e.g.
+  `/hackathon-skills:hackathon-bootstrap` or `/hackathon-skills:hackathon-zip-code`. Use this if the
+  right skill didn't trigger on its own, or you want a specific step to run now.
+
+When a skill asks permission to install a tool, run Docker, or push an image, **say yes** — that is
+expected. Progress is written to `.agent-memory/` inside your project, so you can stop and resume
+anytime (see [Resuming](#resuming-after-a-break-or-a-new-session) below).
+
+---
+
+## Quick start walkthrough (what you actually type)
+
+A whole hackathon, start to finish, as the plain-language prompts you would send. Each line
+triggers the skill named in parentheses:
+
+1. **Start** *(hackathon-bootstrap)* — "Set up my laptop and create a new project called
+   `<name>`: `<one sentence on what it does>`."
+2. **See it** *(hackathon-preview)* — "Show me the app in my browser." → opens `http://localhost:9080`.
+3. **Build a feature** *(hackathon-feature-builder)* — "Add `<feature>` — for example a form to
+   submit X and a list that shows them."  ← repeat this as many times as you like.
+4. **Change the data** *(hackathon-db-helper)* — "Store `<field>` for each `<thing>` and show it."
+5. **Fix something** *(hackathon-bugfix)* — "`<what looks wrong>`. Fix it." (e.g. "the list is blank").
+6. **Understand it** *(hackathon-explainer)* — "Explain what changed in simple words for our demo."
+7. **Zip to submit** *(hackathon-zip-code)* — "Zip my code so I can submit it." Then **upload the
+   printed `.zip` file to the organizer's folder yourself** (manual step; no login needed).
+8. **Package** *(hackathon-single-image-build)* — "Build the final single image and test it runs."
+9. **Push for judging** *(hackathon-deploy-by-pushing-image)* — "Push the image through the hackathon
+   proxy." It will **ask for your Meesho email** — give it; the image is named strictly from that email.
+10. **Final check** *(hackathon-submission-check)* — "Is my project ready to submit?"
+
+Steps **2–6 are the build loop** you repeat while developing; **7–10 are the wrap-up** at the end.
+The detailed version of this exact flow is the [RecipeBox worked example](#worked-example-recipebox-by-a-non-technical-team) further down.
 
 ---
 
@@ -19,7 +79,7 @@ you understand what is happening under the hood.
 | 4. Data | "Save recipes in the database with a rating field" | `hackathon-db-helper` |
 | 5. Fix | "The page is blank" / "the button does nothing" | `hackathon-bugfix` |
 | 6. Explain | "What changed? Explain it simply" | `hackathon-explainer` |
-| 7. Save | "Save my project to GitHub" | `hackathon-github` |
+| 7. Save | "Zip my code so I can submit it" | `hackathon-zip-code` |
 | 8. Package | "Build the final single image for judging" | `hackathon-single-image-build` |
 | 9. Push | "Upload the image through the hackathon proxy for the judges" | `hackathon-deploy-by-pushing-image` |
 | 10. Final check | "Is my project ready to submit?" | `hackathon-submission-check` |
@@ -34,13 +94,17 @@ So you don't have to think about them:
 
 - **Allowed stack only:** React frontend, Node.js *or* Go backend, SQLite database. No
   other frontend framework, backend language, database, cache, hosted backend, or separate service.
-- **Fixed ports:** frontend on `9080`, backend on `8090`.
-- **One final Docker image** that contains the frontend, backend, and database setup —
+- **Fixed ports:** nginx-served frontend on `9080`, backend on `8090`.
+- **nginx + `/api` routing (always):** in the image, nginx serves the React build on `9080` and
+  reverse-proxies `/api/` to the backend. The frontend calls the backend only via the relative
+  `/api/...` path — never a hardcoded host or port — so the app keeps working behind any
+  randomly assigned judging domain or subdomain.
+- **One final Docker image** that contains nginx, the frontend, the backend, and database setup —
   no Docker Compose or separate database container at judging.
 - **Repo-local SQLite data** in `data/hackathon.db` for local runs, mounted into Docker at
   `/app/data` so saved records survive container restarts.
 - **Debian slim base images** in every Dockerfile (never Alpine — it breaks SQLite builds).
-- **No secrets in GitHub** — `.env`, keys, tokens, and `.db` files are kept out of commits.
+- **No secrets in the zip** — `.env`, keys, tokens, and `.db` files are kept out of the submission zip.
 - **Durable memory:** progress is written to `.agent-memory/` so a new session can pick up
   exactly where you left off.
 
@@ -49,8 +113,8 @@ So you don't have to think about them:
 ## Where saved data lives
 
 SQLite is a file database. For these hackathon apps, saved records live in the repo's
-`data/hackathon.db` file during local runs. The `data/` folder is ignored by Git, so saved
-test records are not pushed to GitHub.
+`data/hackathon.db` file during local runs. The `data/` folder is excluded from the uploaded
+zip, so saved test records are never included in the submission zip.
 
 When the app runs in Docker, the repo's `data/` folder is mounted into the container at
 `/app/data`:
@@ -80,16 +144,17 @@ Priya opens the project folder in Claude Code and types:
 `hackathon-bootstrap` runs and:
 
 1. Creates `.agent-memory/` so the session is recoverable.
-2. Runs the tool check. Priya is missing Docker, Node, and the GitHub CLI, so it asks
+2. Runs the tool check. Priya is missing Docker, Node, and `zip`, so it asks
    permission and installs them.
-3. **Sets up GitHub login the easy way:** since Priya is already signed into GitHub in her
-   browser, the credential script launches the browser login — she pastes a one-time code
-   and clicks **Authorize**. No password, no token page. Git is now configured to push
-   without ever prompting again.
-4. Scaffolds `frontend/`, `backend/`, `db/`, a `Dockerfile` (Node on `node:20-bookworm-slim`),
-   `.env.example`, and a `README.md`.
-5. Builds a first screen: an app title, a "post a recipe" form, a list view, and a
-   `/health` endpoint on the backend.
+3. **Notes how code will be saved:** there is no GitHub, git, or cloud connector. When the team
+   is ready to submit, `hackathon-zip-code` builds a clean zip of the source and Priya uploads
+   that file by hand to the organizer's submission folder.
+4. Scaffolds `frontend/`, `backend/`, `db/`, a `Dockerfile` (Node on `node:20-bookworm-slim`)
+   with **nginx** serving the frontend and proxying `/api/` to the backend, `.env.example`,
+   and a `README.md`.
+5. Builds a first screen: an app title, a "post a recipe" form, a list view, and an
+   `/api/health` endpoint on the backend. The React code calls the backend via `/api/...`
+   (same origin), never a hardcoded `localhost:8090`.
 
 ### Step 2 — Preview
 
@@ -129,21 +194,24 @@ mismatch, and confirms the list renders again.
 
 *(Steps 2–6 repeat as they keep building.)*
 
-### Step 7 — Save to GitHub
+### Step 7 — Zip the code to submit
 
-> *"Save everything to GitHub."*
+> *"Zip my code so I can submit it."*
 
-`hackathon-github` checks there are no secrets or `.db` files staged, commits, creates a
-private repo, pushes, and reports the repo URL and commit hash. Because login was set up in
-Step 1, the push does not prompt for a password.
+`hackathon-zip-code` builds a clean, source-only zip (no `.env`, keys, or `.db` files) named
+after the project (e.g. `recipebox.zip`, or a team name if Priya gives one), prints its path and
+size, and tells Priya to upload that single file by hand to the organizer's submission folder.
+The skill never uploads anything itself — no login, no cloud connector.
 
 ### Step 8 — Build the final single image
 
 > *"Build the one final image for judging and test that it runs."*
 
-`hackathon-single-image-build` builds a multi-stage Debian-slim image containing the built
-React app, the Node backend, and SQLite init, then smoke-tests it: it starts a container,
-waits for `/health` and the homepage, and prints the exact run command:
+`hackathon-single-image-build` builds a multi-stage Debian-slim image containing nginx, the built
+React app, the Node backend, and SQLite init. nginx serves the app on `9080` and proxies `/api/`
+to the backend on `8090`. It smoke-tests the image by starting a container and waiting for the
+homepage at `http://localhost:9080/` and the backend through nginx at
+`http://localhost:9080/api/health`, then prints the exact run command:
 
 ```bash
 mkdir -p data && docker run --rm -p 9080:9080 -p 8090:8090 -v "$(pwd)/data:/app/data" recipebox:final
@@ -153,19 +221,19 @@ mkdir -p data && docker run --rm -p 9080:9080 -p 8090:8090 -v "$(pwd)/data:/app/
 
 > *"Upload the image through the hackathon proxy for the judges."*
 
-`hackathon-deploy-by-pushing-image` asks for the organizer proxy URL, login username, and token,
-checks that the image runs locally, tags it using Priya's GitHub username as both
-the folder and image name, pushes it through the proxy, and prints the final image
-URL the judges will pull.
+`hackathon-deploy-by-pushing-image` asks for the organizer proxy URL, login username, token, and
+**Priya's Meesho organization email** (`priya.sharma@meesho.com`). It checks that the image runs
+locally, tags it strictly from that email — `priya.sharma` as both the folder and image name —
+pushes it through the proxy, and prints the final image URL the judges will pull.
 
 ### Step 10 — Final readiness check
 
 > *"Is RecipeBox ready to submit?"*
 
 `hackathon-submission-check` runs the checklist: single image builds and runs, ports correct,
-SQLite initializes in the repo-local `data/` directory, GitHub repo exists with no secrets,
-README has run instructions, image is in the registry. It reports a green checklist (or tells
-her exactly what is still missing).
+SQLite initializes in the repo-local `data/` directory, the source zip is built with no secrets
+(and Priya has uploaded it by hand to the organizer's folder), README has run instructions, image
+is in the registry. It reports a green checklist (or tells her exactly what is still missing).
 
 RecipeBox is submitted.
 
@@ -191,6 +259,6 @@ blocker, and the next exact action — no need to re-explain anything.
 - **Let it install things.** When a skill asks to install Docker/Node/etc., say yes — that is expected.
 - **Don't fight the stack.** If you ask for something outside React + Node/Go + SQLite, the
   agent will steer you back; that constraint is what keeps the final image simple.
-- **Save to GitHub regularly**, not just at the end, so work is never lost.
+- **Zip and upload your code regularly**, not just at the end, so work is never lost.
 
 For installation, see [INSTALLING.md](./INSTALLING.md).

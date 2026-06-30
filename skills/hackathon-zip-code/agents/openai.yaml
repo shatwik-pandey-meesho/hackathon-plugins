@@ -1,0 +1,4 @@
+interface:
+  display_name: "Hackathon Zip Code"
+  short_description: "Zip the project source for manual upload to the organizer"
+  default_prompt: "Use $hackathon-zip-code to zip my hackathon code so I can upload it to the organizer's folder."

@@ -27,19 +27,16 @@ Do not introduce any other frontend framework, backend language, database, cache
 3. If `.agent-memory/` does not exist, run `scripts/setup_agent_memory.sh` or `scripts/setup_agent_memory.ps1` to create it immediately.
 4. Ask for the app idea only if it is missing from memory. Choose Node.js by default for non-technical teams unless they explicitly ask for Go.
 5. Run `scripts/check_and_install_tools.sh` first. Use check mode by default; use `--install` only after the user approves installing software.
-6. Set up GitHub login and credentials in one step so pushing never prompts for a password. Once git is installed, run `scripts/setup_git_credentials.sh` (or `.ps1`). It stores a GitHub token in a plain-text file and points git's `store` credential helper at it in the global gitconfig. Two methods are supported:
-   - `--method gh` (default, easiest): if the participant is not logged in yet, the script launches the GitHub browser login automatically. Because most participants are already signed in to GitHub in their browser, this is just a one-time code paste plus a single "Authorize" click — no password, no PAT page. It then reuses that token.
-   - `--method pat`: paste a classic Personal Access Token from https://github.com/settings/tokens (scope: `repo`). Use this only if the browser login is not possible.
-   Explain to participants that this saves a private key on their own machine only and is never committed to the project.
-7. Create or repair the project so it has `frontend/`, `backend/`, `db/`, `Dockerfile`, `.dockerignore`, `.env.example`, a short `README.md`, and the required `.agent-memory/` files.
-8. Make the first screen usable immediately: a simple app title, one example form, one list view, and one health/status endpoint.
+6. Code is submitted as a **zip the participant uploads by hand** — there is no GitHub, no git setup, and no cloud connector. When the team is ready to submit, `hackathon-zip-code` builds a clean source-only zip and tells the participant to upload it to the organizer's designated folder themselves.
+7. Create or repair the project so it has `frontend/`, `backend/`, `db/`, `Dockerfile`, `.dockerignore`, `.env.example`, a short `README.md`, and the required `.agent-memory/` files. The Dockerfile must serve the frontend with **nginx** on `9080` and reverse-proxy `/api/` to the backend on `8090` (see the "Frontend ↔ Backend Routing" section of `references/project-contract.md`). The React app must call the backend only via relative `/api/...` paths, and the dev server must proxy `/api` to `http://localhost:8090` so the same code works locally and in the image.
+8. Make the first screen usable immediately: a simple app title, one example form, one list view, and an `/api/health` status endpoint. The frontend fetches it as `/api/health` (same origin), never a hardcoded `localhost:8090`.
 9. Add local commands that work without explaining internals:
    - `docker build -t hackathon-app:local .`
    - `mkdir -p data && docker run --rm -p 9080:9080 -p 8090:8090 -v "$(pwd)/data:/app/data" hackathon-app:local`
 10. Verify the app starts before telling the participant it is ready.
 11. After every major step, update the memory files:
    - append a timestamped entry to `.agent-memory/activity.md`
-   - update `.agent-memory/state.json` when ports, stack, image tags, registry URLs, repo URLs, or status change
+   - update `.agent-memory/state.json` when ports, stack, image tags, registry URLs, the code zip path, or status change
    - refresh `.agent-memory/session.md` with the current narrative state
    - refresh `.agent-memory/handoff.md` with the current blocker and next exact action
 
@@ -66,8 +63,6 @@ Read `references/memory-contract.md` before first setup and before any resume. B
 
 - `scripts/check_and_install_tools.sh`: detect OS, check required tools, optionally install common packages on macOS/Linux.
 - `scripts/check_and_install_tools.ps1`: check tools and optionally install common packages on Windows.
-- `scripts/setup_git_credentials.sh`: store a GitHub token in a plain-text file and configure git's `store` helper on macOS/Linux. Methods: `--method gh` (reuse `gh auth login` token) or `--method pat` (paste a classic PAT).
-- `scripts/setup_git_credentials.ps1`: same GitHub credential setup on Windows. Methods: `-Method gh` or `-Method pat`.
 - `scripts/setup_agent_memory.sh`: create the required memory files on macOS/Linux.
 - `scripts/setup_agent_memory.ps1`: create the required memory files on Windows.
 - `scripts/recontextualize_agent_memory.sh`: print the current memory state on macOS/Linux.

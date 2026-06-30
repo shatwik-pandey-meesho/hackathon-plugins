@@ -55,12 +55,12 @@ trap cleanup EXIT
 echo "Starting smoke test container"
 docker run -d --name "$CONTAINER" -p "$FRONTEND_PORT:9080" -p "$BACKEND_PORT:8090" -v "$DATA_DIR:/app/data" "$IMAGE" >/dev/null
 
-echo "Waiting for backend on http://localhost:$BACKEND_PORT/health and frontend on http://localhost:$FRONTEND_PORT"
+echo "Waiting for frontend on http://localhost:$FRONTEND_PORT/ and backend via nginx on http://localhost:$FRONTEND_PORT/api/health"
 for _ in $(seq 1 45); do
   if command -v curl >/dev/null 2>&1 \
-    && curl -fsS "http://localhost:$BACKEND_PORT/health" >/dev/null 2>&1 \
-    && curl -fsS "http://localhost:$FRONTEND_PORT/" >/dev/null 2>&1; then
-    echo "Frontend and backend checks passed."
+    && curl -fsS "http://localhost:$FRONTEND_PORT/" >/dev/null 2>&1 \
+    && curl -fsS "http://localhost:$FRONTEND_PORT/api/health" >/dev/null 2>&1; then
+    echo "Frontend and backend-through-nginx (/api) checks passed."
     echo "Image ready: $IMAGE"
     echo "Run command: docker run --rm -p 9080:9080 -p 8090:8090 -v \"\$(pwd)/data:/app/data\" $IMAGE"
     exit 0

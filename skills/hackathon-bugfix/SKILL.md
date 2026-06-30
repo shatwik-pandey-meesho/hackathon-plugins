@@ -1,6 +1,6 @@
 ---
 name: hackathon-bugfix
-description: "Diagnose and fix common hackathon app failures in React, Node.js or Go, SQLite, Docker, GitHub, and proxy registry setup. Use when a non-technical participant says the page is blank, a button does nothing, data is not saving, Docker will not start, SQLite is broken, the image build fails, the app crashes, or an error message is confusing."
+description: "Diagnose and fix common hackathon app failures in React, Node.js or Go, SQLite, Docker, code zipping, and proxy registry setup. Use when a non-technical participant says the page is blank, a button does nothing, data is not saving, Docker will not start, SQLite is broken, the image build fails, the code zip fails, the app crashes, or an error message is confusing."
 ---
 
 # Hackathon Bugfix
@@ -14,7 +14,7 @@ Convert vague symptoms into a concrete fix. Start with evidence, change the smal
 1. Ask for a screenshot or exact error only if logs cannot be collected locally.
 2. Run `scripts/collect_diagnostics.sh` from the project root.
 3. Read `references/common-failures.md` for likely causes.
-4. Identify the layer: browser, React build, backend API, SQLite, Docker, Git/GitHub, or proxy push.
+4. Identify the layer: browser, React build, backend API, SQLite, Docker, code zip, or proxy push.
 5. Patch the smallest relevant set of files.
 6. Re-run the failing command.
 7. Explain the fix as "what was wrong" and "what works now."

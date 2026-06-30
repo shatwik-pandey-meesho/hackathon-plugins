@@ -4,14 +4,59 @@ The final image must include everything judges need to start the project.
 
 ## Required
 
-- React production build copied into the runtime image.
+- React production build copied into the runtime image and served by **nginx**.
 - Node.js server or Go binary in the runtime image.
+- **nginx** installed in the runtime image, listening on port `9080`, serving the React build at
+  `/` with an SPA fallback and reverse-proxying `/api/` to the backend on `127.0.0.1:8090`.
 - SQLite runtime support installed in the image only if the backend needs the `sqlite3` CLI at runtime.
 - Database initialization from `db/init.sql` or equivalent, without overwriting an existing database in `/app/data`.
-- Startup script that creates `/app/data`, creates the SQLite database file before starting the app, and leaves existing data intact.
-- Frontend listens on port `9080`.
+- Startup script that creates `/app/data`, creates the SQLite database file, starts the backend on
+  `8090`, then starts nginx in the foreground — and leaves existing data intact.
+- Frontend (nginx) listens on port `9080`.
 - Backend listens on port `8090`.
-- Backend `/health` succeeds after startup.
+- `GET /api/health` succeeds **through nginx** at `http://localhost:9080/api/health` after startup.
+
+## nginx + /api Routing (MUST FOLLOW — fixed at all cost)
+
+The frontend must reach the backend only through nginx at the relative path `/api/`, never a
+hardcoded host or port. This is what keeps the app working behind any randomly assigned domain or
+subdomain at judging. Two ports stay open (`9080` for nginx, `8090` for the backend), but the
+app's frontend→backend traffic always goes through nginx `/api`.
+
+Required pieces in the image:
+
+- The React build calls the backend with same-origin relative paths like `/api/...`.
+- All backend routes are under `/api/` (including `/api/health`).
+- nginx config (for example `/etc/nginx/conf.d/default.conf`):
+
+  ```nginx
+  server {
+      listen 9080;
+      server_name _;
+      root /app/frontend;            # React build output (index.html, assets)
+      index index.html;
+
+      # App API: preserve the /api prefix and forward to the backend.
+      location /api/ {
+          proxy_pass http://127.0.0.1:8090;
+          proxy_http_version 1.1;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+      }
+
+      # SPA fallback so client-side routes work on refresh.
+      location / {
+          try_files $uri $uri/ /index.html;
+      }
+  }
+  ```
+
+- The `proxy_pass` has **no trailing slash**, so `/api/recipes` reaches the backend as
+  `/api/recipes` (prefix preserved). Keep backend routes under `/api/` to match.
+- Do not bake an absolute backend URL into the frontend at build time. The same `/api` code must
+  run unchanged locally (dev-server proxy) and in the image (nginx proxy).
 
 ## Final Image Data Mode
 
@@ -46,12 +91,30 @@ In both modes, the standalone run command for judging is `docker run --rm -p 908
 ## Recommended Runtime Pattern
 
 - Use a multi-stage Dockerfile.
-- Build frontend in a `node:20-bookworm-slim` stage.
+- Build frontend in a `node:20-bookworm-slim` stage; copy its build output (e.g. `dist/` or
+  `build/`) into `/app/frontend` in the runtime stage where nginx serves it.
 - Build backend in a `node:20-bookworm-slim` (Node) or `golang:1.22-bookworm` (Go) stage.
 - For Go, copy only the compiled binary into a `debian:bookworm-slim` runtime stage.
-- Use a simple entrypoint script when database initialization must happen before the app starts.
+- Install nginx in the runtime stage (`apt-get install -y nginx`) and add the config above.
+- Use a small entrypoint that initializes the database, starts the backend on `8090` in the
+  background, then runs nginx in the foreground (so the container's main process is nginx):
+
+  ```sh
+  #!/bin/sh
+  set -e
+  mkdir -p /app/data
+  # initialize SQLite from db/init.sql only if the database does not exist yet
+  [ -f /app/data/hackathon.db ] || sqlite3 /app/data/hackathon.db < /app/db/init.sql
+  # start the backend on 8090 in the background...
+  node /app/backend/server.js &        # (or: /app/backend/server &  for a Go binary)
+  # ...then nginx in the foreground on 9080
+  nginx -g 'daemon off;'
+  ```
+
 - Set the runtime database path to `/app/data/hackathon.db`.
 - Run containers with `mkdir -p data && docker run --rm -p 9080:9080 -p 8090:8090 -v "$(pwd)/data:/app/data" IMAGE` so SQLite persists in the repo's ignored `data/` directory.
+- Verify with `curl http://localhost:9080/` (frontend) and `curl http://localhost:9080/api/health`
+  (backend through nginx). The second call is the proof that `/api` proxying works.
 
 ## Not Allowed For Final Submission
 

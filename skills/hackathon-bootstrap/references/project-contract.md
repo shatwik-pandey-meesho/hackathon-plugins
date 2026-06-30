@@ -15,14 +15,34 @@ Use this contract when creating or repairing a participant project.
 
 ## Runtime Contract
 
-- Frontend listens on port `9080`.
+- Frontend is served by **nginx** on port `9080`. nginx serves the built React app at `/` and
+  reverse-proxies `/api/` to the backend (see "Frontend ↔ Backend Routing").
 - Backend listens on port `8090`.
 - Frontend root path `/` serves the React app at `http://localhost:9080`.
-- Backend `/health` returns a simple successful response at `http://localhost:8090/health` after SQLite is ready.
+- Backend exposes `GET /api/health`, reachable through nginx at `http://localhost:9080/api/health`
+  after SQLite is ready. A direct `http://localhost:8090/api/health` also works.
 - Backend reads and writes a local SQLite file at `/app/data/hackathon.db` inside Docker.
 - Local preview and final run commands must bind-mount the repo's `data/` directory to `/app/data` so data survives `docker run --rm` restarts: `-v "$(pwd)/data:/app/data"`.
 - Database path defaults to `/app/data/hackathon.db` in Docker and `data/hackathon.db` outside Docker.
 - Memory files must exist in the project root under `.agent-memory/`.
+
+## Frontend ↔ Backend Routing (MUST FOLLOW)
+
+This is mandatory for every project, dev and image alike. It is what lets the app work behind
+any randomly assigned domain or subdomain at judging.
+
+- The frontend talks to the backend **only** through the relative, same-origin path `/api/...`.
+  Example: `fetch('/api/recipes')`, never `fetch('http://localhost:8090/recipes')`.
+- The frontend must **never** hardcode a host, port, or absolute backend URL, and must not read
+  one from an env var baked at build time. Same origin + `/api` prefix, always.
+- All backend routes live under the `/api/` prefix (including `/api/health`).
+- **In the final image**, nginx (port `9080`) reverse-proxies `/api/` to the backend on
+  `127.0.0.1:8090`, preserving the `/api` prefix, and serves the React build for everything else
+  with an SPA fallback to `index.html`.
+- **In local dev**, the React dev server proxies `/api` to `http://localhost:8090` so the exact
+  same `/api` frontend code runs unchanged in dev and in the image.
+- Port `8090` may still be exposed for direct debugging, but the app's own frontend→backend
+  traffic always goes through nginx `/api`. Do not point the frontend at `8090` directly.
 
 ## Port Conflicts
 
