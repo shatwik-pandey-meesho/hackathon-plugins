@@ -51,6 +51,22 @@ Windows participants can use the PowerShell scripts in each `scripts/` folder. m
 
 ## Installing
 
+### Claude Code marketplace (recommended)
+
+This repo is a Claude Code plugin marketplace. From inside Claude Code, run:
+
+```
+/plugin marketplace add shatwik-pandey-meesho/hackathon-skills
+/plugin install hackathon-skills@hackathon-skills
+```
+
+All ten skills install at once and load automatically, namespaced as
+`hackathon-skills:hackathon-bootstrap`, `hackathon-skills:hackathon-bugfix`, etc.
+No clone or copy step is needed. To update later, run
+`/plugin marketplace update hackathon-skills`. The repo is public, so no token is required.
+
+### Script install (Codex, or copy into `.claude`)
+
 From a terminal in this repo, install the skills with these steps.
 
 macOS/Linux for Codex:

@@ -1,6 +1,17 @@
 # Installing the Hackathon Skills
 
-This repo contains 10 skill folders:
+> **Easiest path (Claude Code):** this repo is also a Claude Code plugin marketplace.
+> From inside Claude Code run:
+>
+> ```
+> /plugin marketplace add shatwik-pandey-meesho/hackathon-skills
+> /plugin install hackathon-skills@hackathon-skills
+> ```
+>
+> That installs all ten skills at once (namespaced as `hackathon-skills:<name>`), no
+> clone or copy needed. The methods below are for Codex or for copying the folders by hand.
+
+This repo contains 10 skill folders under `skills/`:
 
 - `hackathon-bootstrap`
 - `hackathon-feature-builder`
@@ -191,24 +202,24 @@ macOS / Linux (personal install):
 
 ```bash
 mkdir -p ~/.claude/skills
-cp -R hackathon-* ~/.claude/skills/
+cp -R skills/hackathon-* ~/.claude/skills/
 ```
 
 macOS / Linux (one project only):
 
 ```bash
 mkdir -p /path/to/your/project/.claude/skills
-cp -R hackathon-* /path/to/your/project/.claude/skills/
+cp -R skills/hackathon-* /path/to/your/project/.claude/skills/
 ```
 
 Windows PowerShell:
 
 ```powershell
 New-Item -ItemType Directory -Force "$HOME\.claude\skills" | Out-Null
-Copy-Item -Recurse hackathon-* "$HOME\.claude\skills\"
+Copy-Item -Recurse skills\hackathon-* "$HOME\.claude\skills\"
 ```
 
-Or just drag the `hackathon-*` folders into `.claude/skills/` in your file manager. That is
+Or just drag the `hackathon-*` folders from `skills/` into `.claude/skills/` in your file manager. That is
 literally all the "install" is.
 
 ---
@@ -223,7 +234,7 @@ To reuse them in a different project without copying, point that project's
 `.claude/skills/` at this repo with a symlink:
 
 ```bash
-ln -s /Users/you/Projects/BUILDATHON/skills/hackathon-bootstrap \
+ln -s /Users/you/Projects/BUILDATHON/skills/skills/hackathon-bootstrap \
       /path/to/other-project/.claude/skills/hackathon-bootstrap
 ```
 
@@ -236,7 +247,7 @@ Codex auto-discovers skills under `${CODEX_HOME:-~/.codex}/skills`. The automate
 
 ```bash
 mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills"
-cp -R hackathon-* "${CODEX_HOME:-$HOME/.codex}/skills/"
+cp -R skills/hackathon-* "${CODEX_HOME:-$HOME/.codex}/skills/"
 ```
 
 The only Codex-specific file in each skill is `agents/openai.yaml` (UI metadata). It is

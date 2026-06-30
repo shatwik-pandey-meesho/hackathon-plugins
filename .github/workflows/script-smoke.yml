@@ -63,9 +63,9 @@ jobs:
           grep -q 'React.js frontend' README.md
           grep -q 'Node.js or Go backend' README.md
           grep -q 'SQLite database' README.md
-          grep -q 'Frontend: React.js' hackathon-bootstrap/SKILL.md
-          grep -q 'Backend: Node.js or Go' hackathon-bootstrap/SKILL.md
-          grep -q 'Database: SQLite' hackathon-bootstrap/SKILL.md
+          grep -q 'Frontend: React.js' skills/hackathon-bootstrap/SKILL.md
+          grep -q 'Backend: Node.js or Go' skills/hackathon-bootstrap/SKILL.md
+          grep -q 'Database: SQLite' skills/hackathon-bootstrap/SKILL.md
           pattern='[m]ysql|[M]ySQL|[P]ostgres|[M]ongo|[R]edis|[F]irebase|[S]upabase|[N]ext[.]js'
           if find . -path ./.git -prune -o -type f -print0 | xargs -0 grep -InE "$pattern"; then
             echo "Disallowed app-stack references found"

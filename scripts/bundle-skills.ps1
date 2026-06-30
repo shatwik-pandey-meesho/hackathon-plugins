@@ -14,6 +14,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $RootDir = Split-Path -Parent $PSScriptRoot
+$SkillsDir = Join-Path $RootDir "skills"
 
 $Skills = @(
   "hackathon-bootstrap",
@@ -86,7 +87,7 @@ try {
 
   # Copy skill folders.
   foreach ($skill in $Skills) {
-    $src = Join-Path $RootDir $skill
+    $src = Join-Path $SkillsDir $skill
     if (-not (Test-Path $src -PathType Container)) { Write-Error "Missing skill folder: $src"; exit 1 }
     Copy-Item -Recurse -Force $src (Join-Path $BundleRoot $skill)
   }

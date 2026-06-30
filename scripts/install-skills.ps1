@@ -26,6 +26,7 @@ Options:
 
 $ErrorActionPreference = "Stop"
 $RootDir = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+$SkillsDir = Join-Path $RootDir "skills"
 $DefaultCodexDest = if ($env:CODEX_HOME) { Join-Path $env:CODEX_HOME "skills" } else { Join-Path $HOME ".codex\skills" }
 $AllSkills = @(
   "hackathon-bootstrap",
@@ -82,7 +83,7 @@ foreach ($skill in $SelectedSkills) {
 }
 
 foreach ($skill in $SelectedSkills) {
-  $src = Join-Path $RootDir $skill
+  $src = Join-Path $SkillsDir $skill
   $dst = Join-Path $Dest $skill
 
   if (-not (Test-Path $src)) {

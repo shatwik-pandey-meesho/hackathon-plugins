@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin.json",
+  "name": "hackathon-skills",
+  "description": "Ten guided skills that take a non-technical team from an empty laptop to a judge-ready single Docker image (React + Node/Go + SQLite).",
+  "version": "0.1.0",
+  "author": {
+    "name": "shatwik-pandey-meesho"
+  },
+  "homepage": "https://github.com/shatwik-pandey-meesho/hackathon-skills",
+  "repository": "https://github.com/shatwik-pandey-meesho/hackathon-skills",
+  "license": "MIT",
+  "keywords": ["hackathon", "skills", "docker", "react", "sqlite", "scaffolding"]
+}

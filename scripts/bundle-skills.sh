@@ -6,6 +6,7 @@ set -euo pipefail
 # so a participant can unzip and immediately run scripts/install-skills.sh.
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SKILLS_DIR="$ROOT_DIR/skills"
 OUTPUT=""
 BUNDLE_NAME="hackathon-skills"
 FORCE="false"
@@ -119,7 +120,7 @@ mkdir -p "$BUNDLE_ROOT/scripts"
 
 # Copy skill folders.
 for skill in "${SKILLS[@]}"; do
-  SRC="$ROOT_DIR/$skill"
+  SRC="$SKILLS_DIR/$skill"
   if [[ ! -d "$SRC" ]]; then
     echo "Missing skill folder: $SRC" >&2
     exit 1

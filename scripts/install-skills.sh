@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SKILLS_DIR="$ROOT_DIR/skills"
 DEFAULT_CODEX_DEST="${CODEX_HOME:-$HOME/.codex}/skills"
 AGENT=""
 DEST=""
@@ -158,7 +159,7 @@ while IFS= read -r skill; do
 done < <(parse_skills "$SKILLS_ARG")
 
 for skill in "${SELECTED_SKILLS[@]}"; do
-  SRC="$ROOT_DIR/$skill"
+  SRC="$SKILLS_DIR/$skill"
   DST="$DEST/$skill"
 
   if [[ ! -d "$SRC" ]]; then
