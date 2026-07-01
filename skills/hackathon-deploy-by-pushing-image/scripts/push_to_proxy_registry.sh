@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PROXY_HOST="registry.buildathon.meesho.dev"
+PROXY_HOST="registry.buildathon.ltl.sh"
 LOGIN_USER="hackathon"
 TOKEN=""
 LOCAL_IMAGE=""
@@ -25,7 +25,7 @@ Required:
   --user EMAIL            Participant's Meesho email. Can also use MEESHO_EMAIL.
 
 Options:
-  --proxy-host HOST       Proxy registry host. Default: registry.buildathon.meesho.dev
+  --proxy-host HOST       Proxy registry host. Default: registry.buildathon.ltl.sh
   --login-user USER       Docker login username. Default: hackathon
   --tag TAG               Final image tag. Default: UTC timestamp, e.g. 20260701-053012
   --data-dir DIR          Optional host data dir to mount to /app/data during smoke test.

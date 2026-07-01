@@ -54,7 +54,7 @@
 - Check the Docker login username and token are the organizer-provided values.
 - Check the local image exists before tagging.
 - Check the image passes the local health check: frontend `http://localhost:9080/` and backend through nginx `http://localhost:9080/api/health`.
-- Check the final tag uses the email-derived team ID and timestamp path: `registry.buildathon.meesho.dev/TEAM_ID:TIMESTAMP`.
+- Check the final tag uses the email-derived team ID and timestamp path: `registry.buildathon.ltl.sh/TEAM_ID:TIMESTAMP`.
 
 ## Code Zip Fails
 

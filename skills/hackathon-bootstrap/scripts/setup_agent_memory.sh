@@ -29,7 +29,7 @@ if [[ ! -f "$MEMORY_DIR/state.json" ]]; then
   "team_id": "",
   "image_tag": "",
   "registry_url": "",
-  "registry_proxy_host": "registry.buildathon.meesho.dev",
+  "registry_proxy_host": "registry.buildathon.ltl.sh",
   "registry_login_user": "hackathon",
   "last_pushed_image": "",
   "last_pushed_tag": "",

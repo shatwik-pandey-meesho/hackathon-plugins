@@ -225,7 +225,7 @@ mkdir -p data && docker run --rm -p 9080:9080 -p 8090:8090 -v "$(pwd)/data:/app/
 `hackathon-deploy-by-pushing-image` asks for the organizer token and, if local memory does not
 already have it, **Priya's Meesho organization email** (`priya.sharma@meesho.com`). It checks that
 the image runs locally, derives the team ID `priya-sharma`, tags the image as
-`registry.buildathon.meesho.dev/priya-sharma:20260701-053012`, pushes it through the proxy, records
+`registry.buildathon.ltl.sh/priya-sharma:20260701-053012`, pushes it through the proxy, records
 the non-secret push metadata in local `.agent-memory/`, and prints the final image URL the judges
 will pull. The token is never stored.
 

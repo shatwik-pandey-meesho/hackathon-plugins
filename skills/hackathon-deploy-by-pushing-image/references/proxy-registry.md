@@ -4,7 +4,7 @@ Use the organizer's Docker proxy for all image uploads. Do not install registry 
 
 ## Required Inputs
 
-- `PROXY_HOST`: proxy registry host. Default: `registry.buildathon.meesho.dev`. Do not include `https://` or a path.
+- `PROXY_HOST`: proxy registry host. Default: `registry.buildathon.ltl.sh`. Do not include `https://` or a path.
 - `LOGIN_USER`: Docker login username, normally `hackathon`.
 - `TOKEN`: organizer-provided token or password. Do not print it.
 - `LOCAL_IMAGE`: image already built on the participant's machine, for example `hackathon-app:final`.
@@ -22,7 +22,7 @@ PROXY_HOST/TEAM_ID:TAG
 Example:
 
 ```text
-registry.buildathon.meesho.dev/priya-sharma:20260701-053012
+registry.buildathon.ltl.sh/priya-sharma:20260701-053012
 ```
 
 ## Safe Command Pattern
