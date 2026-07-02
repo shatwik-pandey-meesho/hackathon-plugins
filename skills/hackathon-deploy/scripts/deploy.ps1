@@ -4,16 +4,18 @@ param(
   [string]$Image = "hackathon-app:final",
   [string]$Name,
   [string]$Tag,
-  [string]$ProxyHost = "registry.buildathon.ltl.sh",
+  [string]$ProxyHost = "registry.buildathon.meesho.dev",
   [string]$LoginUser = "hackathon",
   [int]$FrontendPort = $(if ($env:FRONTEND_PORT) { [int]$env:FRONTEND_PORT } else { 9080 }),
   [int]$BackendPort = $(if ($env:BACKEND_PORT) { [int]$env:BACKEND_PORT } else { 8090 }),
   [switch]$SkipZip,
   [switch]$SkipPush,
+  [switch]$SkipDeploy,
   [switch]$Help
 )
 
-$LiveUrl = "https://buildathon.ltl.sh"
+# Live apps are served under this base domain as https://<team-id>.<LiveSiteBase>
+$LiveSiteBase = "buildathon.ltl.sh"
 
 if ($Help) {
   @"
@@ -29,10 +31,11 @@ Options:
   -Image IMAGE       Local image tag to build/push. Default: hackathon-app:final
   -Name NAME         Base name for the source zip. Default: project folder name.
   -Tag TAG           Pushed image tag. Default: UTC timestamp.
-  -ProxyHost HOST    Proxy registry host. Default: registry.buildathon.ltl.sh
+  -ProxyHost HOST    Proxy registry host. Default: registry.buildathon.meesho.dev
   -LoginUser USER    Docker login username. Default: hackathon
   -SkipZip           Skip building the source zip.
   -SkipPush          Build and check only; do not log in or push.
+  -SkipDeploy        Push only; do not call the deploy API to start the live deployment.
   -Help              Show this help.
 "@
   exit 0
@@ -42,6 +45,14 @@ $ErrorActionPreference = "Stop"
 
 function Fail($Message) { Write-Error $Message; exit 1 }
 function Test-Cmd($Name) { return [bool](Get-Command $Name -ErrorAction SilentlyContinue) }
+
+# Derive the team id from a Meesho email exactly like push_to_proxy_registry.ps1 does:
+# part before @, lowercased, non-[a-z0-9_-] runs -> '-', trimmed. Keep the two in sync.
+function ConvertTo-TeamId($EmailOrSlug) {
+  $prefix = ($EmailOrSlug -split "@")[0].ToLowerInvariant()
+  $slug = [regex]::Replace($prefix, "[^a-z0-9_-]+", "-")
+  return $slug.Trim("-")
+}
 
 $scriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Path
 $skillsRoot = (Resolve-Path (Join-Path $scriptDir "..\..")).Path
@@ -63,7 +74,7 @@ if (-not (Test-Path "Dockerfile")) {
 }
 
 # ---------------------------------------------------------------------------
-Write-Host "==> Step 1/4  Build the linux/amd64 single image and smoke-test it"
+Write-Host "==> Step 1/5  Build the linux/amd64 single image and smoke-test it"
 $env:FRONTEND_PORT = "$FrontendPort"
 $env:BACKEND_PORT  = "$BackendPort"
 & $buildScript -Image $Image -FrontendPort $FrontendPort -BackendPort $BackendPort
@@ -71,7 +82,7 @@ if ($LASTEXITCODE -ne 0) { Fail "Image build/smoke test failed." }
 
 # ---------------------------------------------------------------------------
 Write-Host ""
-Write-Host "==> Step 2/4  Readiness checks"
+Write-Host "==> Step 2/5  Readiness checks"
 
 if (Test-Path "README.md") {
   Write-Host "PASS  README.md present"
@@ -116,7 +127,7 @@ Write-Host "PASS  standalone image serves the frontend and backend via nginx /ap
 
 # ---------------------------------------------------------------------------
 Write-Host ""
-Write-Host "==> Step 3/4  Zip the source for manual upload"
+Write-Host "==> Step 3/5  Zip the source for manual upload"
 if ($SkipZip) {
   Write-Host "Skipping zip (-SkipZip)."
 } elseif (-not [string]::IsNullOrWhiteSpace($Name)) {
@@ -127,7 +138,9 @@ if ($SkipZip) {
 
 # ---------------------------------------------------------------------------
 Write-Host ""
-Write-Host "==> Step 4/4  Push the image through the organizer proxy"
+Write-Host "==> Step 4/5  Push the image through the organizer proxy"
+$finalUrl = ""
+$teamId = ""
 if ($SkipPush) {
   Write-Host "Skipping push (-SkipPush)."
 } else {
@@ -143,9 +156,15 @@ if ($SkipPush) {
   }
   if ([string]::IsNullOrWhiteSpace($Token)) { Fail "A registry token is required to push." }
 
+  # Compute the team id and tag here so we know the exact pushed image_tag the deploy
+  # API needs. Default the tag to a UTC timestamp and pass it explicitly to the push.
+  $teamId = ConvertTo-TeamId $User
+  if ([string]::IsNullOrWhiteSpace($teamId)) { Fail "Email '$User' produces an empty team id. Use a Meesho email with letters or numbers before @." }
+  if ([string]::IsNullOrWhiteSpace($Tag)) { $Tag = (Get-Date).ToUniversalTime().ToString("yyyyMMdd-HHmmss") }
+  $finalUrl = "$ProxyHost/${teamId}:$Tag"
+
   $pushArgs = @("-ProxyHost", $ProxyHost, "-LoginUser", $LoginUser,
-                "-LocalImage", $Image, "-User", $User, "-SkipSmoke")
-  if (-not [string]::IsNullOrWhiteSpace($Tag)) { $pushArgs += @("-Tag", $Tag) }
+                "-LocalImage", $Image, "-User", $User, "-Tag", $Tag, "-SkipSmoke")
 
   # Pass the token via env (read through docker login --password-stdin), never in argv.
   $env:HACKATHON_PROXY_TOKEN = $Token
@@ -155,13 +174,47 @@ if ($SkipPush) {
 
 # ---------------------------------------------------------------------------
 Write-Host ""
-Write-Host "============================================================"
-Write-Host "Deploy steps finished. Now make it live for judging:"
+Write-Host "==> Step 5/5  Start the live deployment"
+$liveLink = ""
+if ($SkipPush) {
+  Write-Host "Skipping deploy because the image was not pushed (-SkipPush)."
+} elseif ($SkipDeploy) {
+  Write-Host "Skipping deploy (-SkipDeploy). Image is pushed at $finalUrl."
+} else {
+  $deployApi = "https://$ProxyHost/admin/api/deploy"
+  Write-Host "Requesting deploy of $finalUrl"
+  # Send the pushed image_tag to the proxy's deploy API. The token is the same registry
+  # token, sent as a Bearer header. Never print the token.
+  $headers = @{ Authorization = "Bearer $Token" }
+  $body = (@{ image_tag = $finalUrl } | ConvertTo-Json -Compress)
+  try {
+    Invoke-RestMethod -Method Post -Uri $deployApi -Headers $headers `
+      -ContentType 'application/json' -Body $body | Out-Null
+  } catch {
+    Fail "Deploy API call to $deployApi failed: $($_.Exception.Message). Re-check the token and that the image pushed successfully, then retry."
+  }
+  Write-Host "PASS  deploy started"
+  $liveLink = "https://$teamId.$LiveSiteBase"
+}
+
+# ---------------------------------------------------------------------------
 Write-Host ""
-Write-Host "  1. Open $LiveUrl and log in."
-Write-Host "  2. Click the `"Deploy Live`" button."
-Write-Host "  3. Wait for the live link to appear — that is your running"
-Write-Host "     app for the judges."
+Write-Host "============================================================"
+Write-Host "Deploy finished."
+if (-not [string]::IsNullOrWhiteSpace($liveLink)) {
+  Write-Host ""
+  Write-Host "Your live application link (give this to the judges):"
+  Write-Host ""
+  Write-Host "  $liveLink"
+  Write-Host ""
+  Write-Host "It can take a minute or two to come up after the deploy starts."
+  Write-Host "If it does not load yet, wait a moment and refresh."
+} elseif ($SkipDeploy -and -not [string]::IsNullOrWhiteSpace($finalUrl)) {
+  Write-Host ""
+  Write-Host "Image pushed but deploy was skipped. Start it later by POSTing"
+  Write-Host "the image_tag `"$finalUrl`" to https://$ProxyHost/admin/api/deploy,"
+  Write-Host "then open https://$teamId.$LiveSiteBase."
+}
 Write-Host ""
 Write-Host "Also upload the printed dist\<name>.zip to the organizer's"
 Write-Host "submission folder by hand if you have not already."

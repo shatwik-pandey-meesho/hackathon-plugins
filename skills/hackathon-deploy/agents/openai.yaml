@@ -1,4 +1,4 @@
 interface:
   display_name: "Hackathon Deploy"
-  short_description: "Build, check, zip, and push in one step, then go live at buildathon.ltl.sh"
-  default_prompt: "Use $hackathon-deploy to build the final image, check it, zip my code, push it through the organizer proxy, and tell me how to go live."
+  short_description: "Build, check, zip, push, and start the deploy in one step, then get your live link at <team-id>.buildathon.ltl.sh"
+  default_prompt: "Use $hackathon-deploy to build the final image, check it, zip my code, push it through the organizer proxy, start the live deployment, and give me my live application link."

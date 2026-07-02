@@ -13,7 +13,7 @@ Handle only the image upload path through the organizer's Docker proxy. Do not i
 
 1. Confirm the local image exists. If not, use `hackathon-single-image-build`.
 2. Read `references/proxy-registry.md`.
-3. Ask for the token and local image tag. Defaults: proxy host `registry.buildathon.ltl.sh`, username `hackathon`, final image tag as a UTC timestamp.
+3. Ask for the token and local image tag. Defaults: proxy host `registry.buildathon.meesho.dev`, username `hackathon`, final image tag as a UTC timestamp.
 4. **Always ask the participant for their Meesho organization email** unless `.agent-memory/state.json` already has `participant_email` and `team_id`. Use it strictly to name the image — never infer, guess, or substitute another value. Pass the email to the script with `--user`; the script derives the team ID by taking the part before `@`, lowercasing, replacing every run of characters outside `[a-z0-9_-]` with `-`, and trimming leading/trailing hyphens (`Arnav.Jose+Demo@meesho.com` → `arnav-jose-demo`).
 5. The final pushed image path must be based on that email-derived team ID: `PROXY_HOST/TEAM_ID:TAG`.
 6. Run `scripts/push_to_proxy_registry.sh` or `scripts/push_to_proxy_registry.ps1` with explicit arguments. Prefer passing the token through `HACKATHON_PROXY_TOKEN` or `--password-stdin` behavior; do not print the token.

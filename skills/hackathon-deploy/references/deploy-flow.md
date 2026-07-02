@@ -29,10 +29,24 @@ image with an arm64 one. The orchestrator's build phase is the single authoritat
    secret files (`.env`, `*.pem`, `*.key`, service-account JSON) are present. The participant uploads
    this zip to the organizer's folder **by hand** — nothing is uploaded automatically.
 5. **Push** — `push_to_proxy_registry.sh` logs in to the default proxy and pushes
-   `registry.buildathon.ltl.sh/TEAM_ID:TAG`. The orchestrator passes `--skip-smoke` because the image
-   was already smoke-tested in steps 2–3.
-6. **Go live** — open `https://buildathon.ltl.sh`, log in, click **Deploy Live**, and wait for the
-   live link.
+   `registry.buildathon.meesho.dev/TEAM_ID:TAG`. The orchestrator computes `TEAM_ID` (from the email)
+   and `TAG` (UTC timestamp) itself and passes `--tag` explicitly, so it knows the exact pushed
+   `image_tag`. It also passes `--skip-smoke` because the image was already smoke-tested in steps 2–3.
+6. **Deploy** — the orchestrator calls the proxy's deploy API to start the live deployment
+   automatically (no website click):
+
+   ```bash
+   curl -X POST https://registry.buildathon.meesho.dev/admin/api/deploy \
+     -H 'Authorization: Bearer <registry token>' \
+     -H 'Content-Type: application/json' \
+     -d '{"image_tag":"registry.buildathon.meesho.dev/TEAM_ID:TAG"}'
+   ```
+
+   The `Bearer` token is the **same** registry token used for the push (`HACKATHON_PROXY_TOKEN`). The
+   deploy API host is the same as the proxy host. A non-2xx response aborts with the response body.
+7. **Live link** — the running app is always `https://TEAM_ID.buildathon.ltl.sh`
+   (e.g. `arnav-jose` → `https://arnav-jose.buildathon.ltl.sh`). The registry lives on `meesho.dev`;
+   only the live apps are served under `ltl.sh`. It may take a minute or two to come up.
 
 ## Inputs and defaults
 
@@ -46,19 +60,21 @@ Only two inputs are ever needed from the participant; everything else defaults.
 
 Defaults (do not ask unless overridden):
 
-- Proxy host: `registry.buildathon.ltl.sh`
+- Proxy host: `registry.buildathon.meesho.dev` (also the host of the deploy API)
 - Login user: `hackathon`
 - Local image: `hackathon-app:final`
 - Pushed tag: UTC timestamp (e.g. `20260702-091500`)
 - Ports: frontend `9080`, backend `8090`
 - Platform: `linux/amd64` (always)
+- Deploy API: `POST https://registry.buildathon.meesho.dev/admin/api/deploy`
+- Live application link: `https://<team-id>.buildathon.ltl.sh`
 
 ## Command shape
 
 macOS/Linux:
 
 ```bash
-HACKATHON_PROXY_TOKEN=<token> ./scripts/deploy.sh --user priya.sharma@meesho.com
+HACKATHON_PROXY_TOKEN=<token> ./scripts/deploy.sh --user john.doe@meesho.com
 ```
 
 Windows PowerShell:
@@ -69,7 +85,8 @@ $env:HACKATHON_PROXY_TOKEN = "<token>"
 ```
 
 Useful flags (both platforms): `--image`/`-Image`, `--name`/`-Name` (zip name), `--tag`/`-Tag`,
-`--skip-zip`/`-SkipZip`, `--skip-push`/`-SkipPush`.
+`--skip-zip`/`-SkipZip`, `--skip-push`/`-SkipPush`, `--skip-deploy`/`-SkipDeploy` (push but don't
+start the live deployment).
 
 ## Edge cases
 
@@ -81,6 +98,11 @@ Useful flags (both platforms): `--image`/`-Image`, `--name`/`-Name` (zip name), 
 - **ARM machine (Apple Silicon)** — the amd64 build runs under emulation (slower but correct); the
   build aborts if the result is not `linux/amd64`.
 - **Login/push fails** — re-check the token and that the Meesho email yields a valid team id; retry.
-- **Live link doesn't appear** — confirm the push reported success and the participant is logged in
-  at `buildathon.ltl.sh`, then click **Deploy Live** again.
-- **Token must never be printed** — pass it only through `HACKATHON_PROXY_TOKEN`.
+- **Deploy API fails (non-2xx or unreachable)** — confirm the push reported success (the `image_tag`
+  must already exist in the registry), the token is still valid, and the network can reach
+  `registry.buildathon.meesho.dev`; then re-run (use `--skip-zip`/`--skip-push` to jump straight to
+  the deploy if the image is already pushed, or re-run the curl by hand).
+- **Live link doesn't load yet** — the deploy takes a minute or two; wait and refresh
+  `https://<team-id>.buildathon.ltl.sh`.
+- **Token must never be printed** — pass it only through `HACKATHON_PROXY_TOKEN`; the deploy step
+  sends it only as an `Authorization: Bearer` header.

@@ -140,20 +140,25 @@ The helper walks you through these steps and stops to ask only when it needs som
 5. **Ask for two things:** your **Meesho email**, and the **token from the support team**. Paste the
    token when asked.
 6. **Upload everything** using your token.
-7. **Send you to go live.** It tells you to open **https://buildathon.ltl.sh**, log in, click the
-   **Deploy Live** button, and **wait for your live link to appear**.
+7. **Start your app automatically.** Right after the upload, it presses "go" for you (no website, no
+   button to click) and hands you your **live link**.
 
-#### The final click
+#### Your live link
 
-After the upload finishes:
+After the upload finishes, the skill starts your app and shows you a link that looks like:
 
-1. Open **https://buildathon.ltl.sh** and log in.
-2. Click the **Deploy Live** button.
-3. **Wait** — in a moment, a live link appears. That link is your app, online.
-4. Open the link to check it looks right, then share it with the judges. 🎉
+```
+https://your-name.buildathon.ltl.sh
+```
 
-If the live link doesn't show up after a couple of minutes, make sure you're logged in and that the
-upload said it succeeded, then click **Deploy Live** again.
+(Your link is based on your Meesho email — for example `priya.sharma@meesho.com` becomes
+`https://priya-sharma.buildathon.ltl.sh`.)
+
+1. **Wait** — it can take a minute or two to come up.
+2. Open the link to check it looks right, then share it with the judges. 🎉
+
+If the link doesn't load yet, wait a moment and refresh. If it still fails, make sure the upload said
+it succeeded and ask the skill to deploy again.
 
 > **Works on any laptop** — Mac or Windows. And this one skill replaces doing the packaging,
 > checking, code-saving, and uploading separately. Most teams only ever need `hackathon-deploy`.
@@ -190,9 +195,9 @@ Here's a complete day, start to finish, using only plain English. This is exactl
 11. *"Deploy my app."* → 🚀 `hackathon-deploy`
     - It switches to the best mode, packages and tests Recipe Box, and saves your code.
     - It asks for your **Meesho email** and your **token** — you paste them in.
-    - It uploads everything.
-12. Open **https://buildathon.ltl.sh**, log in, click **Deploy Live**, and **wait for the live
-    link**.
+    - It uploads everything **and starts your app for you automatically**.
+12. It hands you your **live link**, like `https://priya-sharma.buildathon.ltl.sh`. **Wait** a minute
+    or two for it to come up.
 13. Open the live link — there's Recipe Box, online for the whole world. Share it with the judges. 🎉
 
 ---
@@ -213,8 +218,9 @@ Here's a complete day, start to finish, using only plain English. This is exactl
 1. Get your **token from the support team**. 🎫
 2. Say *"Deploy my app."* → 🚀
 3. Give your **Meesho email** and paste the **token** when asked.
-4. Open **https://buildathon.ltl.sh**, log in, click **Deploy Live**.
-5. **Wait for the live link** — then share it with the judges. 🎉
+4. It uploads and **starts your app automatically**, then gives you your **live link**
+   (`https://your-name.buildathon.ltl.sh`).
+5. **Wait a minute for it to come up** — then share it with the judges. 🎉
 
 You've got this. Describe what you want in plain words, and let the helpers handle the technical
 parts.

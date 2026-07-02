@@ -16,7 +16,7 @@ Check the complete judging path end to end. The output should be a clear pass/fa
 3. Run `scripts/check_submission.sh` from the project root.
 4. Build and smoke-test the image if the participant wants a real final check. For a final image, also confirm it starts standalone with no bind mount (`docker run --rm -p 9080:9080 -p 8090:8090 IMAGE`).
 5. Confirm a source code zip was built (the `code_zip` in `.agent-memory/state.json`, via `hackathon-zip-code`) and remind the participant to upload that zip to the organizer's folder by hand. If no zip was built, run `hackathon-zip-code`.
-6. Confirm the registry image URL if proxy push has happened. It should normally look like `registry.buildathon.ltl.sh/TEAM_ID:TIMESTAMP`, where `TEAM_ID` came from local `.agent-memory/` or the participant's Meesho email.
+6. Confirm the registry image URL if proxy push has happened. It should normally look like `registry.buildathon.meesho.dev/TEAM_ID:TIMESTAMP`, where `TEAM_ID` came from local `.agent-memory/` or the participant's Meesho email.
 7. Summarize in plain language:
    - Ready
    - Needs fixing before judging

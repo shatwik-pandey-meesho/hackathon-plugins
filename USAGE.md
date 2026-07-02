@@ -89,9 +89,10 @@ The detailed version of this exact flow is the [RecipeBox worked example](#worke
 You will loop through 2–6 many times while building. Steps 7–10 happen near the end.
 
 `hackathon-deploy` is the shortcut for the finish line: it runs steps 8 → 10 → 7 → 9 in one guided
-flow (build the amd64 image, check readiness, zip the source, push through the proxy) and then sends
-you to `buildathon.ltl.sh` to click **Deploy Live** and wait for the live link. It first asks you to
-switch to Opus with high reasoning, and works on macOS and Windows.
+flow (build the amd64 image, check readiness, zip the source, push through the proxy), then calls the
+proxy's deploy API (`POST https://registry.buildathon.meesho.dev/admin/api/deploy`) to start the live
+deployment automatically and hands you your live application link at `https://<team-id>.buildathon.ltl.sh`.
+It first asks you to switch to Opus with high reasoning, and works on macOS and Windows.
 
 ---
 
@@ -231,7 +232,7 @@ mkdir -p data && docker run --rm -p 9080:9080 -p 8090:8090 -v "$(pwd)/data:/app/
 `hackathon-deploy-by-pushing-image` asks for the organizer token and, if local memory does not
 already have it, **Priya's Meesho organization email** (`priya.sharma@meesho.com`). It checks that
 the image runs locally, derives the team ID `priya-sharma`, tags the image as
-`registry.buildathon.ltl.sh/priya-sharma:20260701-053012`, pushes it through the proxy, records
+`registry.buildathon.meesho.dev/priya-sharma:20260701-053012`, pushes it through the proxy, records
 the non-secret push metadata in local `.agent-memory/`, and prints the final image URL the judges
 will pull. The token is never stored.
 

@@ -1,5 +1,5 @@
 param(
-  [string]$ProxyHost = "registry.buildathon.ltl.sh",
+  [string]$ProxyHost = "registry.buildathon.meesho.dev",
   [string]$LoginUser = "hackathon",
   [string]$Token = $env:HACKATHON_PROXY_TOKEN,
   [string]$LocalImage,
@@ -25,7 +25,7 @@ Required:
   -User EMAIL           Participant's Meesho email. Can also use MEESHO_EMAIL.
 
 Options:
-  -ProxyHost HOST       Proxy registry host. Default: registry.buildathon.ltl.sh
+  -ProxyHost HOST       Proxy registry host. Default: registry.buildathon.meesho.dev
   -LoginUser USER       Docker login username. Default: hackathon
   -Tag TAG              Final image tag. Default: UTC timestamp, e.g. 20260701-053012
   -DataDir DIR          Optional host data dir to mount to /app/data during smoke test.

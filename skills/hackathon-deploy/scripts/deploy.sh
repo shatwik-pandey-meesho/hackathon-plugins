@@ -3,8 +3,9 @@ set -euo pipefail
 
 # Combined hackathon deploy for macOS/Linux.
 # Runs, in order: build the linux/amd64 single image + smoke test, readiness checks,
-# zip the source for manual upload, and push through the organizer Docker proxy.
-# Then prints the go-live instructions for https://buildathon.ltl.sh.
+# zip the source for manual upload, push through the organizer Docker proxy, and then
+# call the proxy's deploy API to start the live deployment.
+# Finally prints the live application link: https://<team-id>.buildathon.ltl.sh
 #
 # Reuses the existing skill scripts as the single source of truth for build/zip/push.
 
@@ -13,13 +14,15 @@ ZIP_NAME=""
 USER_EMAIL="${MEESHO_EMAIL:-}"
 TOKEN="${HACKATHON_PROXY_TOKEN:-}"
 TAG=""
-PROXY_HOST="registry.buildathon.ltl.sh"
+PROXY_HOST="registry.buildathon.meesho.dev"
 LOGIN_USER="hackathon"
 SKIP_ZIP="false"
 SKIP_PUSH="false"
+SKIP_DEPLOY="false"
 FRONTEND_PORT="${FRONTEND_PORT:-9080}"
 BACKEND_PORT="${BACKEND_PORT:-8090}"
-LIVE_URL="https://buildathon.ltl.sh"
+# Live apps are served under this base domain as https://<team-id>.<LIVE_SITE_BASE>
+LIVE_SITE_BASE="buildathon.ltl.sh"
 
 usage() {
   cat <<'USAGE'
@@ -35,10 +38,11 @@ Options:
   --image IMAGE       Local image tag to build/push. Default: hackathon-app:final
   --name NAME         Base name for the source zip. Default: project folder name.
   --tag TAG           Pushed image tag. Default: UTC timestamp.
-  --proxy-host HOST   Proxy registry host. Default: registry.buildathon.ltl.sh
+  --proxy-host HOST   Proxy registry host. Default: registry.buildathon.meesho.dev
   --login-user USER   Docker login username. Default: hackathon
   --skip-zip          Skip building the source zip.
   --skip-push         Build and check only; do not log in or push.
+  --skip-deploy       Push only; do not call the deploy API to start the live deployment.
   -h, --help          Show this help.
 
 Environment: HACKATHON_PROXY_TOKEN, MEESHO_EMAIL, FRONTEND_PORT (9080), BACKEND_PORT (8090)
@@ -47,6 +51,16 @@ USAGE
 
 fail() { echo "ERROR: $*" >&2; exit 1; }
 need_cmd() { command -v "$1" >/dev/null 2>&1; }
+
+# Derive the team id from a Meesho email exactly like push_to_proxy_registry.sh does:
+# part before @, lowercased, non-[a-z0-9_-] runs -> '-', trimmed. Keep the two in sync.
+slugify_team_id() {
+  local raw="$1"
+  local prefix="${raw%%@*}"
+  printf "%s" "$prefix" \
+    | tr '[:upper:]' '[:lower:]' \
+    | sed -E 's/[^a-z0-9_-]+/-/g; s/^-+//; s/-+$//'
+}
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -59,6 +73,7 @@ while [[ $# -gt 0 ]]; do
     --login-user) LOGIN_USER="${2:-}"; shift 2 ;;
     --skip-zip) SKIP_ZIP="true"; shift ;;
     --skip-push) SKIP_PUSH="true"; shift ;;
+    --skip-deploy) SKIP_DEPLOY="true"; shift ;;
     -h|--help) usage; exit 0 ;;
     *) fail "Unknown argument: $1" ;;
   esac
@@ -80,12 +95,12 @@ docker info >/dev/null 2>&1 \
 [[ -f Dockerfile ]] || fail "Dockerfile not found in current directory. Package your app first, then deploy."
 
 # ---------------------------------------------------------------------------
-echo "==> Step 1/4  Build the linux/amd64 single image and smoke-test it"
+echo "==> Step 1/5  Build the linux/amd64 single image and smoke-test it"
 FRONTEND_PORT="$FRONTEND_PORT" BACKEND_PORT="$BACKEND_PORT" bash "$BUILD_SCRIPT" "$IMAGE"
 
 # ---------------------------------------------------------------------------
 echo ""
-echo "==> Step 2/4  Readiness checks"
+echo "==> Step 2/5  Readiness checks"
 
 if [[ -f README.md ]]; then
   echo "PASS  README.md present"
@@ -133,7 +148,7 @@ echo "PASS  standalone image serves the frontend and backend via nginx /api"
 
 # ---------------------------------------------------------------------------
 echo ""
-echo "==> Step 3/4  Zip the source for manual upload"
+echo "==> Step 3/5  Zip the source for manual upload"
 if [[ "$SKIP_ZIP" == "true" ]]; then
   echo "Skipping zip (--skip-zip)."
 elif [[ -n "$ZIP_NAME" ]]; then
@@ -144,7 +159,9 @@ fi
 
 # ---------------------------------------------------------------------------
 echo ""
-echo "==> Step 4/4  Push the image through the organizer proxy"
+echo "==> Step 4/5  Push the image through the organizer proxy"
+FINAL_URL=""
+TEAM_ID=""
 if [[ "$SKIP_PUSH" == "true" ]]; then
   echo "Skipping push (--skip-push)."
 else
@@ -165,24 +182,75 @@ else
   fi
   [[ -n "$TOKEN" ]] || fail "A registry token is required to push."
 
+  # Compute the team id and tag here so we know the exact pushed image_tag the deploy
+  # API needs. Default the tag to a UTC timestamp and pass it explicitly to the push.
+  TEAM_ID="$(slugify_team_id "$USER_EMAIL")"
+  [[ -n "$TEAM_ID" ]] || fail "Email '$USER_EMAIL' produces an empty team id. Use a Meesho email with letters or numbers before @."
+  [[ -n "$TAG" ]] || TAG="$(date -u +%Y%m%d-%H%M%S)"
+  FINAL_URL="$PROXY_HOST/$TEAM_ID:$TAG"
+
   push_args=(--proxy-host "$PROXY_HOST" --login-user "$LOGIN_USER" \
-             --local-image "$IMAGE" --user "$USER_EMAIL" --skip-smoke)
-  [[ -n "$TAG" ]] && push_args+=(--tag "$TAG")
+             --local-image "$IMAGE" --user "$USER_EMAIL" --tag "$TAG" --skip-smoke)
 
   # Pass the token via env (read through docker login --password-stdin), never in argv.
   HACKATHON_PROXY_TOKEN="$TOKEN" bash "$PUSH_SCRIPT" "${push_args[@]}"
 fi
 
 # ---------------------------------------------------------------------------
+echo ""
+echo "==> Step 5/5  Start the live deployment"
+LIVE_LINK=""
+if [[ "$SKIP_PUSH" == "true" ]]; then
+  echo "Skipping deploy because the image was not pushed (--skip-push)."
+elif [[ "$SKIP_DEPLOY" == "true" ]]; then
+  echo "Skipping deploy (--skip-deploy). Image is pushed at $FINAL_URL."
+else
+  need_cmd curl || fail "curl is required to call the deploy API."
+  DEPLOY_API="https://$PROXY_HOST/admin/api/deploy"
+  echo "Requesting deploy of $FINAL_URL"
+  # Send the pushed image_tag to the proxy's deploy API. The token is the same registry
+  # token, sent as a Bearer header. Never print the token.
+  deploy_resp="$(curl -sS -w $'\n%{http_code}' -X POST "$DEPLOY_API" \
+    -H "Authorization: Bearer $TOKEN" \
+    -H 'Content-Type: application/json' \
+    -d "{\"image_tag\":\"$FINAL_URL\"}")" \
+    || fail "Could not reach the deploy API at $DEPLOY_API. Check your network and retry."
+  deploy_code="$(printf '%s' "$deploy_resp" | tail -n1)"
+  deploy_body="$(printf '%s' "$deploy_resp" | sed '$d')"
+  if [[ ! "$deploy_code" =~ ^2 ]]; then
+    echo "Deploy API response:" >&2
+    printf '%s\n' "$deploy_body" >&2
+    fail "Deploy API returned HTTP $deploy_code. Re-check the token and that the image pushed successfully, then retry."
+  fi
+  echo "PASS  deploy started (HTTP $deploy_code)"
+  LIVE_LINK="https://$TEAM_ID.$LIVE_SITE_BASE"
+fi
+
+# ---------------------------------------------------------------------------
 cat <<DONE
 
 ============================================================
-Deploy steps finished. Now make it live for judging:
+Deploy finished.
+DONE
+if [[ -n "$LIVE_LINK" ]]; then
+  cat <<DONE
 
-  1. Open ${LIVE_URL} and log in.
-  2. Click the "Deploy Live" button.
-  3. Wait for the live link to appear — that is your running
-     app for the judges.
+Your live application link (give this to the judges):
+
+  $LIVE_LINK
+
+It can take a minute or two to come up after the deploy starts.
+If it does not load yet, wait a moment and refresh.
+DONE
+elif [[ "$SKIP_DEPLOY" == "true" && -n "$FINAL_URL" ]]; then
+  cat <<DONE
+
+Image pushed but deploy was skipped. Start it later by POSTing
+the image_tag "$FINAL_URL" to https://$PROXY_HOST/admin/api/deploy,
+then open https://$TEAM_ID.$LIVE_SITE_BASE.
+DONE
+fi
+cat <<DONE
 
 Also upload the printed dist/<name>.zip to the organizer's
 submission folder by hand if you have not already.

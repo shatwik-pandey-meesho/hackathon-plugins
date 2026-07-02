@@ -86,6 +86,24 @@ When the participant confirms this is the final submission image, decide the dat
 
 In both modes, the standalone run command for judging is `docker run --rm -p 9080:9080 -p 8090:8090 IMAGE`. The repo-local `data/` bind mount remains available for local development and preview but is not required for the final image.
 
+## Third-Party API Tokens / Env (MUST FOLLOW — the image is self-sufficient)
+
+Judges run the final image with a plain `docker run` and **pass no environment variables and no `--env-file`**. So if the app needs a third-party API token or key (for example an OpenAI/Gemini key, a maps key, a payments test key), the image must already contain it — nothing is injected at container start.
+
+- **Bake the value into the Dockerfile with an `ENV` line** so it ships inside the image and is present at runtime with zero setup:
+
+  ```dockerfile
+  # Third-party token baked in so the image runs standalone (judges set no env).
+  ENV THIRD_PARTY_API_KEY=sk-the-actual-demo-key
+  ENV THIRD_PARTY_API_BASE_URL=https://api.example.com
+  ```
+
+- Put these `ENV` lines in the **runtime stage** (the final stage) so they persist in the image the judges run. An `ENV` in an earlier build stage does not carry over.
+- The backend must read the token from `process.env.THIRD_PARTY_API_KEY` (Node) or `os.Getenv("THIRD_PARTY_API_KEY")` (Go) — the same name as the baked `ENV` — with a clear failure message if it is empty, so a missing key is obvious during the smoke test.
+- Do **not** rely on a local `.env` file, a bind-mounted secret, or `docker run -e ...`. The `.env` file is fine for local development, but its values must also be baked into the image for the final build, because judges will not supply it.
+- **Use a throwaway / low-limit / test key that is safe to expose.** A baked-in token is readable by anyone who has the image (`docker history`, `docker inspect`), so treat it as public. Never bake a personal, billing-enabled, or production key. Rotate or revoke it after judging.
+- Keep the real values out of the git repo — bake them only into the image. The submission code zip and README should reference the variable name, not the secret value.
+
 ## Base Image
 
 - All stages must use Debian slim base images. Do not use Alpine.

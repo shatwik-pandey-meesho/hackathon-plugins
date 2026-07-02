@@ -12,7 +12,7 @@ The project is ready when these pass:
 - Browser loads the nginx-served frontend at `http://localhost:9080`.
 - Backend responds through nginx at `http://localhost:9080/api/health`, and the frontend calls the backend only via relative `/api/...` paths (no hardcoded host/port), so it works behind any deployed domain/subdomain.
 - SQLite initializes in `/app/data` and persists in the repo-local ignored `data/` directory across container restarts.
-- Final image is pushed or ready to push through the organizer proxy as `registry.buildathon.ltl.sh/TEAM_ID:TIMESTAMP`.
+- Final image is pushed or ready to push through the organizer proxy as `registry.buildathon.meesho.dev/TEAM_ID:TIMESTAMP`.
 - README includes the final run command and image URL when available.
 
 If one check fails, fix that before calling the project ready.
