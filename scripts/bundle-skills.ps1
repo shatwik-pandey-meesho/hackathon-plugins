@@ -26,6 +26,7 @@ $Skills = @(
   "hackathon-deploy-by-pushing-image",
   "hackathon-zip-code",
   "hackathon-submission-check",
+  "hackathon-deploy",
   "hackathon-explainer"
 )
 

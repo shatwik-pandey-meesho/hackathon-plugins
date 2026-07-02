@@ -27,6 +27,7 @@ This repo contains 10 skill folders under `skills/`:
 - `hackathon-deploy-by-pushing-image`
 - `hackathon-zip-code`
 - `hackathon-submission-check`
+- `hackathon-deploy`
 - `hackathon-explainer`
 
 A "skill" is just a folder with a `SKILL.md` plus optional `references/` and `scripts/`. Installing

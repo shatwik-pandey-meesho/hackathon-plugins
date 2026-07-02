@@ -84,8 +84,14 @@ The detailed version of this exact flow is the [RecipeBox worked example](#worke
 | 8. Package | "Build the final single image for judging" | `hackathon-single-image-build` |
 | 9. Push | "Upload the image through the hackathon proxy for the judges" | `hackathon-deploy-by-pushing-image` |
 | 10. Final check | "Is my project ready to submit?" | `hackathon-submission-check` |
+| 11. Deploy (all-in-one) | "Deploy it" / "ship it" / "go live" | `hackathon-deploy` |
 
 You will loop through 2–6 many times while building. Steps 7–10 happen near the end.
+
+`hackathon-deploy` is the shortcut for the finish line: it runs steps 8 → 10 → 7 → 9 in one guided
+flow (build the amd64 image, check readiness, zip the source, push through the proxy) and then sends
+you to `buildathon.ltl.sh` to click **Deploy Live** and wait for the live link. It first asks you to
+switch to Opus with high reasoning, and works on macOS and Windows.
 
 ---
 

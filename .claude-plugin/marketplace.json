@@ -9,7 +9,7 @@
     {
       "name": "hackathon-skills",
       "source": "./",
-      "description": "Ten guided skills that take a non-technical team from an empty laptop to a judge-ready single Docker image: bootstrap, feature building, preview, bugfix, DB changes, nginx image build, proxy push, code zip for manual upload, submission check, and plain-language explainer.",
+      "description": "Eleven guided skills that take a non-technical team from an empty laptop to a judge-ready single Docker image: bootstrap, feature building, preview, bugfix, DB changes, nginx image build, proxy push, code zip for manual upload, submission check, a one-shot hackathon-deploy (build + check + zip + push + go live), and a plain-language explainer.",
       "version": "0.1.0",
       "author": {
         "name": "shatwik-pandey-meesho"

@@ -15,7 +15,7 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          for path in sorted(Path('.').glob('hackathon-*/SKILL.md')):
+          for path in sorted(Path('skills').glob('hackathon-*/SKILL.md')):
               text = path.read_text()
               assert text.startswith('---\n'), f'missing frontmatter: {path}'
               end = text.find('\n---\n', 4)
@@ -30,7 +30,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for f in scripts/*.sh hackathon-*/scripts/*.sh; do
+          for f in scripts/*.sh skills/hackathon-*/scripts/*.sh; do
             echo "$f"
             bash -n "$f"
             "$f" --help >/dev/null

@@ -44,6 +44,7 @@ to hyphens, so `priya.sharma@meesho.com` becomes `priya-sharma`.
 - `hackathon-deploy-by-pushing-image`: verify the image locally, then push it through the organizer Docker proxy.
 - `hackathon-zip-code`: zip the source code into one clean file for the participant to upload by hand to the organizer's folder.
 - `hackathon-submission-check`: run the final judging readiness checklist.
+- `hackathon-deploy`: one-shot submission — build the amd64 image, check it, zip the source, push through the organizer proxy, then go live at `buildathon.ltl.sh`. Combines the four steps above.
 - `hackathon-explainer`: explain technical results in non-technical language.
 
 ## Script Safety
