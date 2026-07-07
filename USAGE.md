@@ -22,8 +22,11 @@ language and it picks the matching skill automatically. (You *can* also invoke o
 
 2. **Open your hackathon project folder** in Claude Code (an empty folder is fine for a new
    project) — not the skills repo. Everything the skills do happens inside that project folder.
-3. You do **not** need to pre-install Docker, Node, Go, or anything else. The first skill
-   (`hackathon-bootstrap`) checks your tools and offers to install whatever is missing.
+3. You do **not** need to pre-install a container engine, Node, Go, or anything else. The first
+   skill (`hackathon-bootstrap`) checks your tools and guides you through whatever is missing. Note:
+   the skills **never install Docker** — for the container engine you use whatever `docker` you
+   already have, or install **Rancher Desktop** (on macOS from the **iru self-service** portal, on
+   Windows via a script that also enables WSL2).
 
 ---
 
@@ -266,7 +269,7 @@ blocker, and the next exact action — no need to re-explain anything.
 - **Describe outcomes, not code.** "Users should be able to delete their own recipe" is
   better than naming functions or files.
 - **Preview often.** After each change, ask to see it in the browser so problems are caught early.
-- **Let it install things.** When a skill asks to install Docker/Node/etc., say yes — that is expected.
+- **Let it install things.** When a skill asks to install the container engine (Rancher Desktop), Node, etc., say yes — that is expected. (It never installs Docker; on macOS it points you to the iru self-service portal.)
 - **Don't fight the stack.** If you ask for something outside React + Node/Go + SQLite, the
   agent will steer you back; that constraint is what keeps the final image simple.
 - **Zip and upload your code regularly**, not just at the end, so work is never lost.

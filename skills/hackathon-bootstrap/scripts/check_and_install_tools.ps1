@@ -108,6 +108,6 @@ if (-not $dockerReachable) {
     }
   } else {
     Write-Host "Could not find ensure_container_engine.ps1 next to this script."
-    Write-Host "Install Docker Desktop or Rancher Desktop (with the 'dockerd (moby)' engine) manually."
+    Write-Host "Install Rancher Desktop (with the 'dockerd (moby)' engine) manually, then retry. Do not install Docker."
   }
 }

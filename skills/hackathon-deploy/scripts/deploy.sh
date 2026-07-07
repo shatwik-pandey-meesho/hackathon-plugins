@@ -84,14 +84,27 @@ SKILLS_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 BUILD_SCRIPT="$SKILLS_ROOT/hackathon-single-image-build/scripts/build_single_image.sh"
 ZIP_SCRIPT="$SKILLS_ROOT/hackathon-zip-code/scripts/make_code_zip.sh"
 PUSH_SCRIPT="$SKILLS_ROOT/hackathon-deploy-by-pushing-image/scripts/push_to_proxy_registry.sh"
+ENSURE_SCRIPT="$SKILLS_ROOT/hackathon-bootstrap/scripts/ensure_container_engine.sh"
 
 for s in "$BUILD_SCRIPT" "$ZIP_SCRIPT" "$PUSH_SCRIPT"; do
   [[ -f "$s" ]] || fail "Required helper script not found: $s"
 done
 
-need_cmd docker || fail "Docker is not installed or not on PATH."
-docker info >/dev/null 2>&1 \
-  || fail "Docker is installed, but the daemon is not reachable. Start Docker Desktop, then retry."
+# Rancher Desktop exposes its docker CLI under ~/.rd/bin, which a fresh session may not
+# have on PATH yet. Add it so an existing Rancher engine is picked up.
+RD_BIN="$HOME/.rd/bin"
+if [[ -d "$RD_BIN" && ":$PATH:" != *":$RD_BIN:"* ]]; then
+  export PATH="$RD_BIN:$PATH"
+fi
+
+# Use whatever container engine is already installed (Docker Desktop or Rancher Desktop's
+# moby engine — both provide 'docker'). Never install Docker. If none is available, print
+# the Rancher install guidance and stop.
+if ! { need_cmd docker && docker info >/dev/null 2>&1; }; then
+  echo "No working container engine found (need a reachable 'docker' command)." >&2
+  [[ -f "$ENSURE_SCRIPT" ]] && bash "$ENSURE_SCRIPT" --install || true
+  fail "Install/start a container engine (Rancher Desktop — do not install Docker), then rerun deploy."
+fi
 [[ -f Dockerfile ]] || fail "Dockerfile not found in current directory. Package your app first, then deploy."
 
 # ---------------------------------------------------------------------------

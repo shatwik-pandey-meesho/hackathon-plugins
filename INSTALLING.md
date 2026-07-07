@@ -35,14 +35,18 @@ means **making these folders available to your agent** — either as a Claude Co
 recommended) or by copying the folders into a skills directory (the other methods). Nothing is
 compiled and nothing runs during install.
 
-> Installing the skills does **not** install Docker, Node.js, Go, SQLite, or `zip`. Those are
-> installed later by the `hackathon-bootstrap` skill itself. Submitting code just builds a zip
-> (`hackathon-zip-code`) that the participant uploads by hand; proxy uploads need Docker only.
+> Installing the skills does **not** install a container engine, Node.js, Go, SQLite, or `zip`.
+> Those are set up later by the `hackathon-bootstrap` skill itself. Submitting code just builds a
+> zip (`hackathon-zip-code`) that the participant uploads by hand; proxy uploads need a working
+> `docker` command only.
 >
-> **Container engine:** macOS and Linux use **Docker**. On **Windows**, if Docker is missing or its
-> daemon will not run (commonly because **WSL2 is missing**), the bootstrap step enables WSL2 and
-> installs **Rancher Desktop** with the `dockerd (moby)` engine as a fallback — it provides the same
-> `docker` command used to build and push. A fresh WSL2 enable usually requires a **reboot**.
+> **Container engine — never Docker-installed; use Docker if present, otherwise Rancher Desktop:**
+> if a `docker` command already works (Docker Desktop *or* Rancher Desktop's `dockerd (moby)`
+> engine), it is used as-is. If none exists, install **Rancher Desktop** — on **macOS** from the
+> **iru self-service** portal (the **All** section, alongside **Node.js**); on **Windows** the
+> bootstrap step **enables WSL2 and installs Rancher Desktop** with the `dockerd (moby)` engine via
+> a script. Rancher provides the same `docker` command used to build and push. A fresh WSL2 enable
+> usually requires a **reboot**. The skills never install Docker.
 
 ### Which method should I use?
 

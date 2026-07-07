@@ -26,7 +26,8 @@ Hyper-V backend instead.
   -PreferRancher  Skip the Docker Desktop start attempt and go straight to Rancher.
   -WaitSeconds N  How long to wait for the engine to become reachable. Default: 180.
 
-On macOS, use ensure_container_engine.sh instead (Docker is preferred there).
+On macOS, use ensure_container_engine.sh instead (it verifies the engine and, if none
+exists, points to Rancher Desktop via the iru self-service portal). Docker is never installed.
 "@
   exit 0
 }

@@ -24,16 +24,23 @@ It works on **any device** — macOS/Linux use `scripts/deploy.sh`, Windows uses
 
 ## Container engine
 
-Build and push need a working `docker` command with a reachable engine:
+Build and push need a working `docker` command with a reachable engine. **Never install
+Docker** — use it if it is already there, otherwise install **Rancher Desktop** (its
+`dockerd (moby)` engine provides the same `docker` command):
 
-- **macOS/Linux:** Docker (Docker Desktop on macOS) is preferred and expected.
+- **If a working `docker` already exists** (Docker Desktop *or* Rancher Desktop), the
+  orchestrator uses it as-is on every OS.
+- **macOS/Linux:** if there is no working engine, `deploy.sh` prints the Rancher Desktop
+  install guidance and stops. On **macOS**, that means opening the **iru self-service** portal,
+  going to the **All** section, and installing **Rancher Desktop** and **Node.js** (then picking
+  the `dockerd (moby)` engine). Do not install Docker Desktop.
 - **Windows:** the orchestrator checks `docker` first. If it is missing or the daemon will not
   come up (commonly because **WSL2 is missing**), `deploy.ps1` runs
-  `hackathon-bootstrap/scripts/ensure_container_engine.ps1` to enable WSL2 and install the
-  **Rancher Desktop** fallback configured with the **`dockerd (moby)`** engine, which provides the
-  same `docker` command used to build and push. Pass `-SkipEngineInstall` to disable this, or
-  `-PreferRancher` to skip Docker Desktop entirely. If WSL2 had to be freshly enabled, Windows
-  usually needs a **reboot** before the engine works — tell the participant to reboot and rerun.
+  `hackathon-bootstrap/scripts/ensure_container_engine.ps1` to **enable WSL2 and install
+  Rancher Desktop** configured with the **`dockerd (moby)`** engine. Pass `-SkipEngineInstall`
+  to disable this, or `-PreferRancher` to skip an existing Docker Desktop entirely. If WSL2 had
+  to be freshly enabled, Windows usually needs a **reboot** before the engine works — tell the
+  participant to reboot and rerun. It never installs Docker.
 
 ## Step 0 — Ask the participant to switch to Opus with high reasoning (do this first)
 
@@ -112,7 +119,8 @@ high reasoning is strongly recommended here.
 
 ## Resources
 
-- `scripts/deploy.sh`: macOS/Linux orchestrator — build → check → zip → push → deploy, then prints the live link.
-- `scripts/deploy.ps1`: Windows PowerShell orchestrator with the same flow, including the Windows container-engine setup (Docker, or the Rancher Desktop moby fallback).
+- `scripts/deploy.sh`: macOS/Linux orchestrator — build → check → zip → push → deploy, then prints the live link. Uses an existing `docker` engine; never installs Docker (prints Rancher Desktop / iru self-service guidance if none is found).
+- `scripts/deploy.ps1`: Windows PowerShell orchestrator with the same flow, including the Windows container-engine setup (uses an existing Docker if present, otherwise enables WSL2 and installs Rancher Desktop's moby engine).
 - `references/deploy-flow.md`: the combined flow, defaults, and edge cases in one place.
-- `../hackathon-bootstrap/scripts/ensure_container_engine.ps1`: Windows helper that guarantees a working `docker` engine, installing the Rancher Desktop (moby) fallback when Docker is unavailable.
+- `../hackathon-bootstrap/scripts/ensure_container_engine.ps1`: Windows helper that guarantees a working `docker` engine by using an existing Docker or installing Rancher Desktop (moby). Never installs Docker.
+- `../hackathon-bootstrap/scripts/ensure_container_engine.sh`: macOS/Linux helper that verifies the engine and prints Rancher Desktop install guidance (macOS: iru self-service "All" section) when none is present.

@@ -47,19 +47,29 @@
 - Check `nginx` is installed in the runtime stage and its config is copied to `/etc/nginx/conf.d/`.
 - Check frontend port `9080` (nginx) and backend port `8090` are exposed and not already used by another program.
 
-## Docker Will Not Start (Windows / WSL2)
+## Container Engine Will Not Start
 
-- On Windows, a Linux-container engine needs virtualization. **Rancher Desktop requires WSL2**; **Docker Desktop can use WSL2 or, on Pro/Enterprise, Hyper-V**. If `docker info` fails with a WSL or virtualization error, WSL2 is likely missing or disabled (and CPU virtualization must be enabled in BIOS).
+**Policy: never install Docker.** If a `docker` command already works (from Docker Desktop *or* Rancher Desktop's `dockerd (moby)` engine), use it. If none is installed, install **Rancher Desktop** — on **macOS** from the **iru self-service** portal ("All" section, alongside **Node.js**), on **Windows** via the script below.
+
+### macOS
+- If `docker` works, you are done. If it is installed but the engine is stopped, open **Rancher Desktop** (or Docker Desktop if that is what you have) and wait for it to finish starting.
+- If nothing is installed: open the **iru self-service** portal, go to the **All** section, and install **Rancher Desktop** and **Node.js**. Open Rancher Desktop once and set **Preferences → Container Engine** to **dockerd (moby)**. Do **not** install Docker Desktop.
+- Rancher's `docker` CLI lives under `~/.rd/bin`. If a **new terminal** cannot find `docker`, that folder is not on PATH yet — reopen the terminal or add it.
+
+### Windows / WSL2
+- On Windows, a Linux-container engine needs virtualization. **Rancher Desktop requires WSL2** (CPU virtualization must be enabled in BIOS). If `docker info` fails with a WSL or virtualization error, WSL2 is likely missing or disabled.
 - First try enabling WSL2: open **PowerShell as Administrator** and run `wsl --install`, then **reboot**.
-- If Docker Desktop still will not run, use the **Rancher Desktop** fallback: run `hackathon-bootstrap/scripts/ensure_container_engine.ps1 -Install`. It enables WSL2 and installs Rancher Desktop with the **`dockerd (moby)`** engine, which provides the same `docker` command for building and pushing.
+- Then install the engine with the script: run `hackathon-bootstrap/scripts/ensure_container_engine.ps1 -Install`. If an existing Docker is present and working it is used as-is; otherwise it enables WSL2 and installs **Rancher Desktop** with the **`dockerd (moby)`** engine. It never installs Docker.
 - Rancher's `docker.exe` lives under `%USERPROFILE%\.rd\bin`. If a **new terminal** cannot find `docker` after install, that folder is not on PATH yet — reopen the terminal or add it.
 - In Rancher Desktop, confirm **Preferences → Container Engine** is set to **dockerd (moby)**, not containerd; containerd provides `nerdctl`, not `docker`, and the scripts require `docker`.
-- **Want no WSL2?** On **Windows Pro/Enterprise/Education** you can run Docker Desktop with the **Hyper-V backend** instead (Settings → General → uncheck "Use WSL 2 based engine"). **Windows Home has no Hyper-V**, so WSL2 (with either engine) is required there. If virtualization is entirely unavailable, no local Linux engine works — build against an organizer-provided remote Docker host via `DOCKER_HOST` / `docker context`.
-- macOS/Linux: keep using Docker. On macOS start Docker Desktop (`open -a Docker`); on Linux start the docker service and ensure your user is in the `docker` group.
+- If virtualization is entirely unavailable, no local Linux engine works — build against an organizer-provided remote engine via `DOCKER_HOST` / `docker context`.
+
+### Linux
+- If `docker` works, use it. Otherwise install **Rancher Desktop** from https://rancherdesktop.io and choose the `dockerd (moby)` engine. Do not install Docker.
 
 ## Proxy Push Fails
 
-- Check Docker Desktop (or the Rancher Desktop moby engine) is running and `docker info` works. On Windows, see "Docker Will Not Start (Windows / WSL2)" above.
+- Check your container engine is running and `docker info` works — Rancher Desktop, or Docker Desktop if that is what you have. If none is installed, see "Container Engine Will Not Start" above (never install Docker; install Rancher Desktop).
 - Check the proxy host is only the registry host, with no `https://` prefix and no path.
 - Check the Docker login username and token are the organizer-provided values.
 - Check the local image exists before tagging.

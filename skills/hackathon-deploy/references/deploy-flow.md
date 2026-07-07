@@ -95,10 +95,14 @@ Windows-only container-engine flags: `-SkipEngineInstall` (do not auto-install a
 ## Edge cases
 
 - **No Dockerfile** — the app isn't packaged yet; build the app first, then deploy.
-- **Docker daemon not running** — start Docker Desktop, then retry. On **Windows**, if it will not
-  come up (often because WSL2 is missing), `deploy.ps1` auto-runs
-  `hackathon-bootstrap/scripts/ensure_container_engine.ps1` to enable WSL2 and install the Rancher
-  Desktop (moby) fallback. A fresh WSL2 enable usually needs a **reboot** before `docker` works.
+- **No container engine / engine not running** — never install Docker; use it if present, else
+  install **Rancher Desktop**. If a `docker` command already works (Docker Desktop or Rancher
+  Desktop's moby engine), the orchestrator uses it. If the engine is installed but stopped, start
+  it (open Rancher Desktop, or Docker Desktop if that is what you have) and retry. If nothing is
+  installed: on **macOS** open the **iru self-service** portal, go to the **All** section, and
+  install **Rancher Desktop** + **Node.js** (pick the `dockerd (moby)` engine); on **Windows**,
+  `deploy.ps1` auto-runs `hackathon-bootstrap/scripts/ensure_container_engine.ps1` to enable WSL2
+  and install Rancher Desktop (moby). A fresh WSL2 enable usually needs a **reboot** first.
 - **Port 9080/8090 busy** — free the port (or set `FRONTEND_PORT`/`BACKEND_PORT`) before retrying;
   never push an unverified image.
 - **Secret file present** — the zip step refuses; remove/rename it (an `.env.example` is allowed).
