@@ -88,10 +88,17 @@ Useful flags (both platforms): `--image`/`-Image`, `--name`/`-Name` (zip name), 
 `--skip-zip`/`-SkipZip`, `--skip-push`/`-SkipPush`, `--skip-deploy`/`-SkipDeploy` (push but don't
 start the live deployment).
 
+Windows-only container-engine flags: `-SkipEngineInstall` (do not auto-install an engine if
+`docker` is unavailable) and `-PreferRancher` (skip Docker Desktop and use the Rancher Desktop
+`dockerd (moby)` engine).
+
 ## Edge cases
 
 - **No Dockerfile** — the app isn't packaged yet; build the app first, then deploy.
-- **Docker daemon not running** — start Docker Desktop, then retry.
+- **Docker daemon not running** — start Docker Desktop, then retry. On **Windows**, if it will not
+  come up (often because WSL2 is missing), `deploy.ps1` auto-runs
+  `hackathon-bootstrap/scripts/ensure_container_engine.ps1` to enable WSL2 and install the Rancher
+  Desktop (moby) fallback. A fresh WSL2 enable usually needs a **reboot** before `docker` works.
 - **Port 9080/8090 busy** — free the port (or set `FRONTEND_PORT`/`BACKEND_PORT`) before retrying;
   never push an unverified image.
 - **Secret file present** — the zip step refuses; remove/rename it (an `.env.example` is allowed).

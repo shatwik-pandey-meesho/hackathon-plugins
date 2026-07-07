@@ -52,7 +52,7 @@ DOCKER_DEFAULT_PLATFORM=linux/amd64 docker build --platform linux/amd64 -t "$IMA
 BUILT_ARCH="$(docker image inspect "$IMAGE" --format '{{.Os}}/{{.Architecture}}' 2>/dev/null || true)"
 if [[ "$BUILT_ARCH" != "linux/amd64" ]]; then
   echo "Built image platform is '$BUILT_ARCH', but deployment requires 'linux/amd64'."
-  echo "Ensure Docker Desktop supports amd64 emulation and retry."
+  echo "Ensure your Docker engine supports amd64 emulation (e.g. Docker Desktop on macOS) and retry."
   exit 1
 fi
 echo "Verified image platform: linux/amd64"

@@ -26,7 +26,7 @@ Do not introduce any other frontend framework, backend language, database, cache
 2. If `.agent-memory/` exists, run `scripts/recontextualize_agent_memory.sh` or `scripts/recontextualize_agent_memory.ps1`, read the memory files, and summarize the current state before asking new questions. Treat the memory files as the project source of truth for prior decisions, completed steps, blockers, ports, build outputs, registry URLs, and next actions.
 3. If `.agent-memory/` does not exist, run `scripts/setup_agent_memory.sh` or `scripts/setup_agent_memory.ps1` to create it immediately.
 4. Ask for the app idea only if it is missing from memory. Choose Node.js by default for non-technical teams unless they explicitly ask for Go.
-5. Run `scripts/check_and_install_tools.sh` first. Use check mode by default; use `--install` only after the user approves installing software.
+5. Run `scripts/check_and_install_tools.sh` (macOS/Linux) or `scripts/check_and_install_tools.ps1` (Windows) first. Use check mode by default; use `--install`/`-Install` only after the user approves installing software. For the container engine: **macOS/Linux prefer Docker**; on **Windows**, if Docker is missing or its daemon will not run (often because **WSL2 is missing**), the installer delegates to `scripts/ensure_container_engine.ps1`, which enables WSL2 and installs the **Rancher Desktop** fallback with the **`dockerd (moby)`** engine so the `docker` command works. If WSL2 had to be freshly enabled, the machine usually needs a **reboot** before `docker` works.
 6. Code is submitted as a **zip the participant uploads by hand** — there is no GitHub, no git setup, and no cloud connector. When the team is ready to submit, `hackathon-zip-code` builds a clean source-only zip and tells the participant to upload it to the organizer's designated folder themselves.
 7. Create or repair the project so it has `frontend/`, `backend/`, `db/`, `Dockerfile`, `.dockerignore`, `.env.example`, a short `README.md`, and the required `.agent-memory/` files. The Dockerfile must serve the frontend with **nginx** on `9080` and reverse-proxy `/api/` to the backend on `8090` (see the "Frontend ↔ Backend Routing" section of `references/project-contract.md`). The React app must call the backend only via relative `/api/...` paths, and the dev server must proxy `/api` to `http://localhost:8090` so the same code works locally and in the image.
 8. Make the first screen usable immediately: a simple app title, one example form, one list view, and an `/api/health` status endpoint. The frontend fetches it as `/api/health` (same origin), never a hardcoded `localhost:8090`.
@@ -61,8 +61,10 @@ Read `references/memory-contract.md` before first setup and before any resume. B
 
 ## Resources
 
-- `scripts/check_and_install_tools.sh`: detect OS, check required tools, optionally install common packages on macOS/Linux.
-- `scripts/check_and_install_tools.ps1`: check tools and optionally install common packages on Windows.
+- `scripts/check_and_install_tools.sh`: detect OS, check required tools, optionally install common packages on macOS/Linux (Docker preferred).
+- `scripts/check_and_install_tools.ps1`: check tools and optionally install common packages on Windows; delegates the container engine to `ensure_container_engine.ps1`.
+- `scripts/ensure_container_engine.ps1`: Windows — guarantee a working `docker` engine; enables WSL2 and installs the Rancher Desktop (moby) fallback when Docker is unavailable.
+- `scripts/ensure_container_engine.sh`: macOS/Linux — verify a working `docker` engine (Docker preferred; no Rancher fallback).
 - `scripts/setup_agent_memory.sh`: create the required memory files on macOS/Linux.
 - `scripts/setup_agent_memory.ps1`: create the required memory files on Windows.
 - `scripts/recontextualize_agent_memory.sh`: print the current memory state on macOS/Linux.

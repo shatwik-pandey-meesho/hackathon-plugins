@@ -11,6 +11,8 @@ param(
   [switch]$SkipZip,
   [switch]$SkipPush,
   [switch]$SkipDeploy,
+  [switch]$SkipEngineInstall,
+  [switch]$PreferRancher,
   [switch]$Help
 )
 
@@ -36,7 +38,14 @@ Options:
   -SkipZip           Skip building the source zip.
   -SkipPush          Build and check only; do not log in or push.
   -SkipDeploy        Push only; do not call the deploy API to start the live deployment.
+  -SkipEngineInstall Do not auto-install a container engine if docker is unavailable.
+  -PreferRancher     Skip Docker Desktop and use the Rancher Desktop (moby) engine.
   -Help              Show this help.
+
+Container engine: if 'docker' is missing or its daemon is unreachable (for example
+because WSL2 is missing), this script runs ensure_container_engine.ps1 to enable WSL2
+and install the Rancher Desktop fallback (moby engine) so the image can be built and
+pushed. Pass -SkipEngineInstall to disable that.
 "@
   exit 0
 }
@@ -56,18 +65,34 @@ function ConvertTo-TeamId($EmailOrSlug) {
 
 $scriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Path
 $skillsRoot = (Resolve-Path (Join-Path $scriptDir "..\..")).Path
-$buildScript = Join-Path $skillsRoot "hackathon-single-image-build\scripts\build_single_image.ps1"
-$zipScript   = Join-Path $skillsRoot "hackathon-zip-code\scripts\make_code_zip.ps1"
-$pushScript  = Join-Path $skillsRoot "hackathon-deploy-by-pushing-image\scripts\push_to_proxy_registry.ps1"
+$buildScript  = Join-Path $skillsRoot "hackathon-single-image-build\scripts\build_single_image.ps1"
+$zipScript    = Join-Path $skillsRoot "hackathon-zip-code\scripts\make_code_zip.ps1"
+$pushScript   = Join-Path $skillsRoot "hackathon-deploy-by-pushing-image\scripts\push_to_proxy_registry.ps1"
+$ensureScript = Join-Path $skillsRoot "hackathon-bootstrap\scripts\ensure_container_engine.ps1"
 
 foreach ($s in @($buildScript, $zipScript, $pushScript)) {
   if (-not (Test-Path $s)) { Fail "Required helper script not found: $s" }
 }
 
-if (-not (Test-Cmd "docker")) { Fail "Docker is not installed or not on PATH." }
-docker info *> $null
-if ($LASTEXITCODE -ne 0) {
-  Fail "Docker is installed, but the daemon is not reachable. Start Docker Desktop, then retry."
+# Add a Rancher Desktop (moby) install to PATH if it is present but not on this session's PATH.
+$rdBin = Join-Path $env:USERPROFILE ".rd\bin"
+if ((Test-Path $rdBin) -and ($env:Path -notlike "*$rdBin*")) { $env:Path = "$rdBin;$env:Path" }
+
+function Test-DockerReachable {
+  if (-not (Test-Cmd "docker")) { return $false }
+  docker info *> $null
+  return ($LASTEXITCODE -eq 0)
+}
+
+if (-not (Test-DockerReachable)) {
+  if ($SkipEngineInstall -or -not (Test-Path $ensureScript)) {
+    Fail "Docker is not available (missing or daemon not reachable). Start Docker Desktop, or on Windows run ensure_container_engine.ps1 -Install to set up the Rancher Desktop fallback, then retry."
+  }
+  Write-Host "==> Step 0  Docker is not available. Setting up a container engine..."
+  if ($PreferRancher) { & $ensureScript -Install -PreferRancher } else { & $ensureScript -Install }
+  if (-not (Test-DockerReachable)) {
+    Fail "Could not get a working container engine. If WSL2 was just enabled, REBOOT and rerun. Otherwise open Rancher Desktop, confirm the engine is 'dockerd (moby)', then retry."
+  }
 }
 if (-not (Test-Path "Dockerfile")) {
   Fail "Dockerfile not found in current directory. Package your app first, then deploy."

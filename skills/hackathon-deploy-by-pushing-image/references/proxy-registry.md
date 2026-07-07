@@ -57,7 +57,7 @@ The script:
 - If the Meesho email / team ID is not in local memory, ask the participant. Do not invent it.
 - If a team ID cannot be derived from the email, ask the participant to re-check the email.
 - If the image is missing locally, build it first with `hackathon-single-image-build`.
-- If Docker is installed but the daemon is unreachable, ask the participant to start Docker Desktop or fix Docker permissions.
+- If Docker is installed but the daemon is unreachable, ask the participant to start Docker Desktop or fix Docker permissions. On **Windows**, if it will not start (often because **WSL2 is missing**), run `hackathon-bootstrap/scripts/ensure_container_engine.ps1 -Install` to enable WSL2 and install the **Rancher Desktop** fallback with the `dockerd (moby)` engine, which provides the same `docker` command for pushing.
 - If the image fails the local health check, fix the app or image before pushing.
 - If the final image must be judged without a local bind mount, prefer a smoke test without `--data-dir`. Use `--data-dir` only for local development checks.
 - If login fails, re-check proxy host, username, and token before retrying.

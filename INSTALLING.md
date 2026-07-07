@@ -38,6 +38,11 @@ compiled and nothing runs during install.
 > Installing the skills does **not** install Docker, Node.js, Go, SQLite, or `zip`. Those are
 > installed later by the `hackathon-bootstrap` skill itself. Submitting code just builds a zip
 > (`hackathon-zip-code`) that the participant uploads by hand; proxy uploads need Docker only.
+>
+> **Container engine:** macOS and Linux use **Docker**. On **Windows**, if Docker is missing or its
+> daemon will not run (commonly because **WSL2 is missing**), the bootstrap step enables WSL2 and
+> installs **Rancher Desktop** with the `dockerd (moby)` engine as a fallback — it provides the same
+> `docker` command used to build and push. A fresh WSL2 enable usually requires a **reboot**.
 
 ### Which method should I use?
 

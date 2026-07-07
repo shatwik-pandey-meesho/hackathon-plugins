@@ -22,6 +22,19 @@ Then it hands the participant their **live application link**, which is always
 
 It works on **any device** — macOS/Linux use `scripts/deploy.sh`, Windows uses `scripts/deploy.ps1`.
 
+## Container engine
+
+Build and push need a working `docker` command with a reachable engine:
+
+- **macOS/Linux:** Docker (Docker Desktop on macOS) is preferred and expected.
+- **Windows:** the orchestrator checks `docker` first. If it is missing or the daemon will not
+  come up (commonly because **WSL2 is missing**), `deploy.ps1` runs
+  `hackathon-bootstrap/scripts/ensure_container_engine.ps1` to enable WSL2 and install the
+  **Rancher Desktop** fallback configured with the **`dockerd (moby)`** engine, which provides the
+  same `docker` command used to build and push. Pass `-SkipEngineInstall` to disable this, or
+  `-PreferRancher` to skip Docker Desktop entirely. If WSL2 had to be freshly enabled, Windows
+  usually needs a **reboot** before the engine works — tell the participant to reboot and rerun.
+
 ## Step 0 — Ask the participant to switch to Opus with high reasoning (do this first)
 
 Deploy is the highest-stakes step: it produces the artifact judges run. **Before doing anything
@@ -100,5 +113,6 @@ high reasoning is strongly recommended here.
 ## Resources
 
 - `scripts/deploy.sh`: macOS/Linux orchestrator — build → check → zip → push → deploy, then prints the live link.
-- `scripts/deploy.ps1`: Windows PowerShell orchestrator with the same flow.
+- `scripts/deploy.ps1`: Windows PowerShell orchestrator with the same flow, including the Windows container-engine setup (Docker, or the Rancher Desktop moby fallback).
 - `references/deploy-flow.md`: the combined flow, defaults, and edge cases in one place.
+- `../hackathon-bootstrap/scripts/ensure_container_engine.ps1`: Windows helper that guarantees a working `docker` engine, installing the Rancher Desktop (moby) fallback when Docker is unavailable.

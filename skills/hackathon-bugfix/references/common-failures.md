@@ -47,9 +47,19 @@
 - Check `nginx` is installed in the runtime stage and its config is copied to `/etc/nginx/conf.d/`.
 - Check frontend port `9080` (nginx) and backend port `8090` are exposed and not already used by another program.
 
+## Docker Will Not Start (Windows / WSL2)
+
+- On Windows, a Linux-container engine needs virtualization. **Rancher Desktop requires WSL2**; **Docker Desktop can use WSL2 or, on Pro/Enterprise, Hyper-V**. If `docker info` fails with a WSL or virtualization error, WSL2 is likely missing or disabled (and CPU virtualization must be enabled in BIOS).
+- First try enabling WSL2: open **PowerShell as Administrator** and run `wsl --install`, then **reboot**.
+- If Docker Desktop still will not run, use the **Rancher Desktop** fallback: run `hackathon-bootstrap/scripts/ensure_container_engine.ps1 -Install`. It enables WSL2 and installs Rancher Desktop with the **`dockerd (moby)`** engine, which provides the same `docker` command for building and pushing.
+- Rancher's `docker.exe` lives under `%USERPROFILE%\.rd\bin`. If a **new terminal** cannot find `docker` after install, that folder is not on PATH yet — reopen the terminal or add it.
+- In Rancher Desktop, confirm **Preferences → Container Engine** is set to **dockerd (moby)**, not containerd; containerd provides `nerdctl`, not `docker`, and the scripts require `docker`.
+- **Want no WSL2?** On **Windows Pro/Enterprise/Education** you can run Docker Desktop with the **Hyper-V backend** instead (Settings → General → uncheck "Use WSL 2 based engine"). **Windows Home has no Hyper-V**, so WSL2 (with either engine) is required there. If virtualization is entirely unavailable, no local Linux engine works — build against an organizer-provided remote Docker host via `DOCKER_HOST` / `docker context`.
+- macOS/Linux: keep using Docker. On macOS start Docker Desktop (`open -a Docker`); on Linux start the docker service and ensure your user is in the `docker` group.
+
 ## Proxy Push Fails
 
-- Check Docker Desktop is running and `docker info` works.
+- Check Docker Desktop (or the Rancher Desktop moby engine) is running and `docker info` works. On Windows, see "Docker Will Not Start (Windows / WSL2)" above.
 - Check the proxy host is only the registry host, with no `https://` prefix and no path.
 - Check the Docker login username and token are the organizer-provided values.
 - Check the local image exists before tagging.

@@ -18,8 +18,25 @@ Builds the final single Docker image and smoke-tests it.
 $ErrorActionPreference = "Stop"
 $container = "hackathon-smoke-$([System.Guid]::NewGuid().ToString('N').Substring(0,8))"
 
+# A Rancher Desktop (moby) install exposes docker.exe under %USERPROFILE%\.rd\bin, which
+# may not be on a fresh session's PATH yet. Add it before checking for docker.
+$rdBin = Join-Path $env:USERPROFILE ".rd\bin"
+if ((Test-Path $rdBin) -and ($env:Path -notlike "*$rdBin*")) { $env:Path = "$rdBin;$env:Path" }
+
 if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
   Write-Host "Docker is not installed or not on PATH."
+  Write-Host "On Windows, set up a container engine with:"
+  Write-Host "  ..\..\hackathon-bootstrap\scripts\ensure_container_engine.ps1 -Install"
+  Write-Host "(installs the Rancher Desktop 'moby' fallback if Docker Desktop is unavailable)."
+  exit 1
+}
+
+docker info *> $null
+if ($LASTEXITCODE -ne 0) {
+  Write-Host "Docker is installed but the engine is not reachable."
+  Write-Host "Start Docker Desktop, or on Windows run:"
+  Write-Host "  ..\..\hackathon-bootstrap\scripts\ensure_container_engine.ps1 -Install"
+  Write-Host "then retry."
   exit 1
 }
 
@@ -52,7 +69,7 @@ try {
   $builtArch = (docker image inspect $Image --format '{{.Os}}/{{.Architecture}}' 2>$null)
   if ($builtArch -ne "linux/amd64") {
     Write-Host "Built image platform is '$builtArch', but deployment requires 'linux/amd64'."
-    Write-Host "Ensure Docker Desktop supports amd64 emulation and retry."
+    Write-Host "Ensure your Docker engine (Docker Desktop or Rancher Desktop) supports amd64 emulation and retry."
     exit 1
   }
   Write-Host "Verified image platform: linux/amd64"

@@ -13,6 +13,10 @@ git, docker, docker compose, node, npm, go, sqlite3, and zip.
 
 Default mode only reports missing tools. --install attempts best-effort installs
 on macOS with Homebrew or Debian/Ubuntu with apt.
+
+Container engine: Docker is preferred on macOS and Linux. The Rancher Desktop
+fallback is a Windows-only path (see ensure_container_engine.ps1); this script
+installs Docker here.
 USAGE
   exit 0
 fi

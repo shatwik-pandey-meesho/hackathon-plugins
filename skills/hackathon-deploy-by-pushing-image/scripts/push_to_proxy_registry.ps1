@@ -55,11 +55,18 @@ if ([string]::IsNullOrWhiteSpace($LocalImage)) { Fail "-LocalImage is required."
 if ([string]::IsNullOrWhiteSpace($LoginUser)) { Fail "-LoginUser cannot be empty." }
 if ([string]::IsNullOrWhiteSpace($Tag)) { $Tag = (Get-Date).ToUniversalTime().ToString("yyyyMMdd-HHmmss") }
 
-if (-not (Test-Command "docker")) { Fail "Docker is not installed or not on PATH." }
+# A Rancher Desktop (moby) install exposes docker.exe under %USERPROFILE%\.rd\bin, which
+# may not be on a fresh session's PATH yet. Add it before checking for docker.
+$rdBin = Join-Path $env:USERPROFILE ".rd\bin"
+if ((Test-Path $rdBin) -and ($env:Path -notlike "*$rdBin*")) { $env:Path = "$rdBin;$env:Path" }
+
+if (-not (Test-Command "docker")) {
+  Fail "Docker is not installed or not on PATH. On Windows, set up a container engine with ..\..\hackathon-bootstrap\scripts\ensure_container_engine.ps1 -Install (installs the Rancher Desktop 'moby' fallback if Docker Desktop is unavailable), then retry."
+}
 if (-not (Test-Command "curl")) { Fail "curl is required for the local health check." }
 docker info *> $null
 if ($LASTEXITCODE -ne 0) {
-  Fail "Docker is installed, but the Docker daemon is not reachable. Start Docker Desktop or fix Docker permissions, then retry."
+  Fail "Docker is installed, but the Docker daemon is not reachable. Start Docker Desktop, or on Windows run ..\..\hackathon-bootstrap\scripts\ensure_container_engine.ps1 -Install to set up the Rancher Desktop fallback, then retry."
 }
 
 $ProxyHost = $ProxyHost -replace "^https?://", ""
