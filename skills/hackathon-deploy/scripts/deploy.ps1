@@ -186,7 +186,8 @@ if ($SkipPush) {
   $pushArgs = @("-ProxyHost", $ProxyHost, "-LoginUser", $LoginUser,
                 "-LocalImage", $Image, "-User", $User, "-Tag", $Tag, "-SkipSmoke")
 
-  # Pass the token via env (read through docker login --password-stdin), never in argv.
+  # Pass the token to the push script via env, never in this orchestrator's argv. The push
+  # script logs in with `docker login --password` (the token is office-IP-scoped).
   $env:HACKATHON_PROXY_TOKEN = $Token
   & $pushScript @pushArgs
   if ($LASTEXITCODE -ne 0) { Fail "Push failed." }

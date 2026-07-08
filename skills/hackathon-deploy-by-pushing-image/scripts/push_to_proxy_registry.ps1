@@ -190,7 +190,10 @@ $finalUrl = "$ProxyHost/${teamId}:$Tag"
 Repair-DockerCredsStore
 
 Write-Host "Logging in to $ProxyHost as $LoginUser"
-$Token | docker login $ProxyHost --username $LoginUser --password-stdin | Out-Null
+# Use --password (not --password-stdin): the token is only valid from the office IP, so CLI
+# exposure is not a concern, and this avoids the PowerShell stdin-piping quirks that break
+# --password-stdin on Windows. Docker may print an insecure-password warning; that is expected.
+docker login $ProxyHost --username $LoginUser --password $Token *> $null
 if ($LASTEXITCODE -ne 0) { Fail "Docker login failed. On Windows, if this is a credential-store error, the '`"credsStore`": `"desktop`",' line was removed from %USERPROFILE%\.docker\config.json just now — open a NEW terminal (or restart Claude Code so it inherits the updated PATH/credentials) and rerun the deploy. If 'docker' itself was not found, that also means the shell has a stale PATH from a fresh Docker Desktop install: reopen the terminal / restart Claude Code and try again." }
 
 docker tag $LocalImage $finalUrl

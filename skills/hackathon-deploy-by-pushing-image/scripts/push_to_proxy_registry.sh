@@ -200,7 +200,11 @@ fi
 FINAL_URL="$PROXY_HOST/$TEAM_ID:$TAG"
 
 echo "Logging in to $PROXY_HOST as $LOGIN_USER"
-printf "%s" "$TOKEN" | docker login "$PROXY_HOST" --username "$LOGIN_USER" --password-stdin >/dev/null
+# Use --password (not --password-stdin): the token is only valid from the office IP, so CLI
+# exposure is not a concern, and this avoids stdin-piping quirks (notably on Windows). Docker
+# may print an insecure-password warning; that is expected. The token itself is never echoed.
+docker login "$PROXY_HOST" --username "$LOGIN_USER" --password "$TOKEN" >/dev/null 2>&1 \
+  || fail "Docker login failed. Re-check the token, username ($LOGIN_USER), and proxy host ($PROXY_HOST)."
 
 docker tag "$LOCAL_IMAGE" "$FINAL_URL"
 docker push "$FINAL_URL"

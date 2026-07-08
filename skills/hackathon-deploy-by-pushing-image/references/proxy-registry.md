@@ -44,7 +44,7 @@ The script:
 - Confirms the local image exists.
 - Runs the image locally and requires both `http://localhost:9080/` and `http://localhost:9080/api/health` (backend through nginx) to respond before pushing.
 - Stops if ports `9080` or `8090` are already in use.
-- Logs in with `docker login --password-stdin` so the token is not placed in shell history as `-p TOKEN`.
+- Logs in with `docker login --password "$TOKEN"`. The token is only valid from the office IP, so CLI exposure is not a concern; using `--password` (instead of `--password-stdin`) also avoids stdin-piping quirks that break login on Windows. Docker may print an insecure-password warning — that is expected. The token value itself is never echoed to the console.
 - Tags the local image as `PROXY_HOST/TEAM_ID:TAG`.
 - Pushes the final image.
 - Updates local `.agent-memory/` with non-secret push metadata when that directory exists. It never stores the token.

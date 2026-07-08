@@ -107,8 +107,9 @@ high reasoning is strongly recommended here.
 
 ## Safety
 
-- Never print the registry token. Pass it via `HACKATHON_PROXY_TOKEN`, which the push script reads
-  through `docker login --password-stdin`, and which the deploy step sends only as a `Bearer` header.
+- Never print the registry token. Pass it via `HACKATHON_PROXY_TOKEN`; the push script uses it for
+  `docker login --password` (the token is office-IP-scoped, so CLI use is fine) and the deploy step
+  sends it only as a `Bearer` header. Never echo the token to the console or write it to memory.
 - Never invent the team id. Derive it strictly from the participant's Meesho email (part before `@`,
   lowercased, non-`[a-z0-9_-]` runs → `-`, trimmed).
 - The zip must stay source-only and secret-free; the zip step refuses to build if it finds `.env`,

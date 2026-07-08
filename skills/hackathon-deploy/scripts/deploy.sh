@@ -192,7 +192,8 @@ else
   push_args=(--proxy-host "$PROXY_HOST" --login-user "$LOGIN_USER" \
              --local-image "$IMAGE" --user "$USER_EMAIL" --tag "$TAG" --skip-smoke)
 
-  # Pass the token via env (read through docker login --password-stdin), never in argv.
+  # Pass the token to the push script via env, never in this orchestrator's argv. The push
+  # script logs in with `docker login --password` (the token is office-IP-scoped).
   HACKATHON_PROXY_TOKEN="$TOKEN" bash "$PUSH_SCRIPT" "${push_args[@]}"
 fi
 
