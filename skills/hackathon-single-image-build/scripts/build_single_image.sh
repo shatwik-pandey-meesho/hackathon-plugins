@@ -20,16 +20,8 @@ USAGE
   exit 0
 fi
 
-# Rancher Desktop exposes its docker CLI under ~/.rd/bin; add it so an existing Rancher
-# engine is found. Any engine that provides 'docker' works (Rancher Desktop or Docker Desktop).
-RD_BIN="$HOME/.rd/bin"
-if [[ -d "$RD_BIN" && ":$PATH:" != *":$RD_BIN:"* ]]; then
-  export PATH="$RD_BIN:$PATH"
-fi
-
 if ! command -v docker >/dev/null 2>&1; then
-  echo "No 'docker' command found. Install a container engine (Rancher Desktop — on macOS"
-  echo "via the iru self-service 'All' section; do not install Docker), then retry."
+  echo "Docker is not installed or not on PATH. Install Docker Desktop, then retry."
   exit 1
 fi
 
@@ -60,7 +52,7 @@ DOCKER_DEFAULT_PLATFORM=linux/amd64 docker build --platform linux/amd64 -t "$IMA
 BUILT_ARCH="$(docker image inspect "$IMAGE" --format '{{.Os}}/{{.Architecture}}' 2>/dev/null || true)"
 if [[ "$BUILT_ARCH" != "linux/amd64" ]]; then
   echo "Built image platform is '$BUILT_ARCH', but deployment requires 'linux/amd64'."
-  echo "Ensure your container engine (Rancher Desktop or Docker Desktop) supports amd64 emulation and retry."
+  echo "Ensure your Docker engine supports amd64 emulation (e.g. Docker Desktop) and retry."
   exit 1
 fi
 echo "Verified image platform: linux/amd64"

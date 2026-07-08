@@ -16,7 +16,7 @@ Handle only the image upload path through the organizer's Docker proxy. Do not i
 3. Ask for the token and local image tag. Defaults: proxy host `registry.buildathon.meesho.dev`, username `hackathon`, final image tag as a UTC timestamp.
 4. **Always ask the participant for their Meesho organization email** unless `.agent-memory/state.json` already has `participant_email` and `team_id`. Use it strictly to name the image — never infer, guess, or substitute another value. Pass the email to the script with `--user`; the script derives the team ID by taking the part before `@`, lowercasing, replacing every run of characters outside `[a-z0-9_-]` with `-`, and trimming leading/trailing hyphens (`Arnav.Jose+Demo@meesho.com` → `arnav-jose-demo`).
 5. The final pushed image path must be based on that email-derived team ID: `PROXY_HOST/TEAM_ID:TAG`.
-6. Run `scripts/push_to_proxy_registry.sh` or `scripts/push_to_proxy_registry.ps1` with explicit arguments. Prefer passing the token through `HACKATHON_PROXY_TOKEN` or `--password-stdin` behavior; do not print the token.
+6. Run `scripts/push_to_proxy_registry.sh` or `scripts/push_to_proxy_registry.ps1` with explicit arguments. Prefer passing the token through `HACKATHON_PROXY_TOKEN` or `--password-stdin` behavior; do not print the token. On **Windows**, the `.ps1` script automatically removes the `"credsStore": "desktop"` line from `%USERPROFILE%\.docker\config.json` before logging in (backing it up to `config.json.bak`), because Docker Desktop's credential helper commonly breaks `docker login`/`docker push`. **After that edit (or after a fresh Docker Desktop install), run the login/push in a new shell.** If login/push still fails with a credential error, or `docker` is "not found", in the **same** session, do **not** keep retrying there — the process's `PATH`/credential state is fixed at launch. Tell the participant to **close and reopen the terminal, or restart Claude Code, and rerun**, then continue.
 7. The script must smoke-test the local image before pushing unless the participant explicitly says it was already checked and accepts `--skip-smoke`.
 8. Report the final image URL:
    `PROXY_HOST/TEAM_ID:TAG`
@@ -40,5 +40,5 @@ Handle only the image upload path through the organizer's Docker proxy. Do not i
 ## Resources
 
 - `scripts/push_to_proxy_registry.sh`: smoke-test a local image, log in to the organizer Docker proxy with a token, tag as `PROXY_HOST/TEAM_ID:TAG`, and push.
-- `scripts/push_to_proxy_registry.ps1`: Windows PowerShell version of the proxy push script.
+- `scripts/push_to_proxy_registry.ps1`: Windows PowerShell version of the proxy push script; also fixes the Docker Desktop `credsStore: desktop` login issue automatically.
 - `references/proxy-registry.md`: required proxy inputs, image naming rules, safe command pattern, and edge cases.

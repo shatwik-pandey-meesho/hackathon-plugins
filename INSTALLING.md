@@ -35,18 +35,15 @@ means **making these folders available to your agent** — either as a Claude Co
 recommended) or by copying the folders into a skills directory (the other methods). Nothing is
 compiled and nothing runs during install.
 
-> Installing the skills does **not** install a container engine, Node.js, Go, SQLite, or `zip`.
-> Those are set up later by the `hackathon-bootstrap` skill itself. Submitting code just builds a
-> zip (`hackathon-zip-code`) that the participant uploads by hand; proxy uploads need a working
-> `docker` command only.
+> Installing the skills does **not** install Docker, Node.js, Go, SQLite, or `zip`. Those are
+> installed later by the `hackathon-bootstrap` skill itself. Submitting code just builds a zip
+> (`hackathon-zip-code`) that the participant uploads by hand; proxy uploads need Docker only.
 >
-> **Container engine — never Docker-installed; use Docker if present, otherwise Rancher Desktop:**
-> if a `docker` command already works (Docker Desktop *or* Rancher Desktop's `dockerd (moby)`
-> engine), it is used as-is. If none exists, install **Rancher Desktop** — on **macOS** from the
-> **iru self-service** portal (the **All** section, alongside **Node.js**); on **Windows** the
-> bootstrap step **enables WSL2 and installs Rancher Desktop** with the `dockerd (moby)` engine via
-> a script. Rancher provides the same `docker` command used to build and push. A fresh WSL2 enable
-> usually requires a **reboot**. The skills never install Docker.
+> **Container engine:** the engine is **Docker Desktop**. On **macOS** the bootstrap step installs
+> Docker Desktop (Homebrew). On **Windows** it uses **Docker Desktop with the Hyper-V backend** — if
+> Docker is missing it enables the **Hyper-V** Windows feature and installs Docker Desktop via a
+> script. Enabling Hyper-V needs **Windows Pro/Enterprise/Education** and a **reboot** (Windows Home
+> has no Hyper-V and must use Docker Desktop's WSL2 backend instead).
 
 ### Which method should I use?
 

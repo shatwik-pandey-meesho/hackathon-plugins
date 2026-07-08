@@ -24,23 +24,31 @@ It works on **any device** — macOS/Linux use `scripts/deploy.sh`, Windows uses
 
 ## Container engine
 
-Build and push need a working `docker` command with a reachable engine. **Never install
-Docker** — use it if it is already there, otherwise install **Rancher Desktop** (its
-`dockerd (moby)` engine provides the same `docker` command):
+Build and push need a working `docker` command with a reachable engine. The engine is
+**Docker (Docker Desktop)** on every OS:
 
-- **If a working `docker` already exists** (Docker Desktop *or* Rancher Desktop), the
-  orchestrator uses it as-is on every OS.
-- **macOS/Linux:** if there is no working engine, `deploy.sh` prints the Rancher Desktop
-  install guidance and stops. On **macOS**, that means opening the **iru self-service** portal,
-  going to the **All** section, and installing **Rancher Desktop** and **Node.js** (then picking
-  the `dockerd (moby)` engine). Do not install Docker Desktop.
-- **Windows:** the orchestrator checks `docker` first. If it is missing or the daemon will not
-  come up (commonly because **WSL2 is missing**), `deploy.ps1` runs
-  `hackathon-bootstrap/scripts/ensure_container_engine.ps1` to **enable WSL2 and install
-  Rancher Desktop** configured with the **`dockerd (moby)`** engine. Pass `-SkipEngineInstall`
-  to disable this, or `-PreferRancher` to skip an existing Docker Desktop entirely. If WSL2 had
-  to be freshly enabled, Windows usually needs a **reboot** before the engine works — tell the
-  participant to reboot and rerun. It never installs Docker.
+- **macOS:** use **Docker Desktop**. If it is not running, start it (`open -a Docker`) and retry.
+- **Windows:** use **Docker Desktop with the Hyper-V backend** (the default). The orchestrator
+  checks `docker` first. If it is missing or the daemon will not come up, `deploy.ps1` runs
+  `hackathon-bootstrap/scripts/ensure_container_engine.ps1` to start an existing Docker Desktop,
+  or — if Docker is missing — **enable the Hyper-V Windows feature and install Docker Desktop**
+  configured for the Hyper-V backend. Pass `-SkipEngineInstall` to disable this. Enabling Hyper-V
+  needs **Windows Pro/Enterprise/Education** and a **reboot** before the engine works — tell the
+  participant to reboot and rerun. (Windows Home has no Hyper-V; there Docker Desktop must use its
+  WSL2 backend instead.)
+
+**Windows — always run docker commands in a fresh shell after any engine/config change.** After a
+fresh Docker Desktop install (which changes `PATH`) or after the push step removes the
+`"credsStore": "desktop"` line from `%USERPROFILE%\.docker\config.json`, the current shell can hold
+a **stale `PATH` or stale credential state**. So:
+
+- Run the next `docker` command (build/login/push) in a **new shell** — do not reuse the shell that
+  ran the installer or the config edit.
+- If `docker` is still "not found", or `docker login`/`push` still fails with a credential error in
+  the **same** session, **stop retrying in that session**. A running process (including this
+  Claude Code session and its child shells) inherits `PATH` at launch and cannot refresh it
+  mid-run. Tell the participant to **close and reopen the terminal — or fully restart Claude Code —
+  and rerun the deploy.** Retrying in the stale session will keep failing.
 
 ## Step 0 — Ask the participant to switch to Opus with high reasoning (do this first)
 
@@ -119,8 +127,8 @@ high reasoning is strongly recommended here.
 
 ## Resources
 
-- `scripts/deploy.sh`: macOS/Linux orchestrator — build → check → zip → push → deploy, then prints the live link. Uses an existing `docker` engine; never installs Docker (prints Rancher Desktop / iru self-service guidance if none is found).
-- `scripts/deploy.ps1`: Windows PowerShell orchestrator with the same flow, including the Windows container-engine setup (uses an existing Docker if present, otherwise enables WSL2 and installs Rancher Desktop's moby engine).
+- `scripts/deploy.sh`: macOS/Linux orchestrator — build → check → zip → push → deploy, then prints the live link. Requires a running Docker Desktop.
+- `scripts/deploy.ps1`: Windows PowerShell orchestrator with the same flow, including the Windows container-engine setup (starts an existing Docker Desktop, otherwise enables Hyper-V and installs Docker Desktop with the Hyper-V backend).
 - `references/deploy-flow.md`: the combined flow, defaults, and edge cases in one place.
-- `../hackathon-bootstrap/scripts/ensure_container_engine.ps1`: Windows helper that guarantees a working `docker` engine by using an existing Docker or installing Rancher Desktop (moby). Never installs Docker.
-- `../hackathon-bootstrap/scripts/ensure_container_engine.sh`: macOS/Linux helper that verifies the engine and prints Rancher Desktop install guidance (macOS: iru self-service "All" section) when none is present.
+- `../hackathon-bootstrap/scripts/ensure_container_engine.ps1`: Windows helper that guarantees a working `docker` engine — starts an existing Docker Desktop, or enables Hyper-V and installs Docker Desktop (Hyper-V backend).
+- `../hackathon-bootstrap/scripts/ensure_container_engine.sh`: macOS/Linux helper that verifies Docker Desktop and, with `--install`, installs it (Homebrew on macOS, apt on Linux).

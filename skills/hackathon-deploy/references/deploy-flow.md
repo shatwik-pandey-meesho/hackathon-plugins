@@ -88,21 +88,29 @@ Useful flags (both platforms): `--image`/`-Image`, `--name`/`-Name` (zip name), 
 `--skip-zip`/`-SkipZip`, `--skip-push`/`-SkipPush`, `--skip-deploy`/`-SkipDeploy` (push but don't
 start the live deployment).
 
-Windows-only container-engine flags: `-SkipEngineInstall` (do not auto-install an engine if
-`docker` is unavailable) and `-PreferRancher` (skip Docker Desktop and use the Rancher Desktop
-`dockerd (moby)` engine).
+Windows-only container-engine flag: `-SkipEngineInstall` (do not auto-set-up the engine if
+`docker` is unavailable — otherwise the script starts an existing Docker Desktop, or enables
+Hyper-V and installs Docker Desktop with the Hyper-V backend).
 
 ## Edge cases
 
 - **No Dockerfile** — the app isn't packaged yet; build the app first, then deploy.
-- **No container engine / engine not running** — never install Docker; use it if present, else
-  install **Rancher Desktop**. If a `docker` command already works (Docker Desktop or Rancher
-  Desktop's moby engine), the orchestrator uses it. If the engine is installed but stopped, start
-  it (open Rancher Desktop, or Docker Desktop if that is what you have) and retry. If nothing is
-  installed: on **macOS** open the **iru self-service** portal, go to the **All** section, and
-  install **Rancher Desktop** + **Node.js** (pick the `dockerd (moby)` engine); on **Windows**,
-  `deploy.ps1` auto-runs `hackathon-bootstrap/scripts/ensure_container_engine.ps1` to enable WSL2
-  and install Rancher Desktop (moby). A fresh WSL2 enable usually needs a **reboot** first.
+- **Docker daemon not running** — start Docker Desktop, then retry. On **Windows**, if it will not
+  come up, `deploy.ps1` auto-runs `hackathon-bootstrap/scripts/ensure_container_engine.ps1` to
+  start an existing Docker Desktop, or — if Docker is missing — enable the **Hyper-V** Windows
+  feature and install Docker Desktop (Hyper-V backend). A fresh Hyper-V enable needs
+  **Windows Pro/Enterprise/Education** and a **reboot** first.
+- **Windows push/login fails with a credential-store error** — Docker Desktop on Windows writes
+  `"credsStore": "desktop"` into `%USERPROFILE%\.docker\config.json`, which frequently breaks
+  `docker login`/`docker push` for the proxy. The push script auto-removes that line (backing the
+  file up to `config.json.bak`) before logging in. If you hit it by hand, delete the
+  `"credsStore": "desktop",` line from that file and retry.
+- **Windows: docker not found, or login still fails right after install/config change** — the shell
+  has a stale `PATH`/credential state. Run docker commands in a **new shell**. A running process
+  (including this Claude Code session and any child shell it spawns) inherits `PATH` at launch and
+  cannot refresh it mid-run, so retrying in the same session keeps failing. **Close and reopen the
+  terminal, or fully restart Claude Code, and rerun the deploy** — do not loop retries in the stale
+  session.
 - **Port 9080/8090 busy** — free the port (or set `FRONTEND_PORT`/`BACKEND_PORT`) before retrying;
   never push an unverified image.
 - **Secret file present** — the zip step refuses; remove/rename it (an `.env.example` is allowed).

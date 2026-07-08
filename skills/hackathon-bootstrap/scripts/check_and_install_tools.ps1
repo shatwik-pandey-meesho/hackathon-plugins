@@ -1,12 +1,11 @@
 param(
   [switch]$Install,
-  [switch]$PreferRancher,
   [switch]$Help
 )
 
 if ($Help) {
   @"
-Usage: .\check_and_install_tools.ps1 [-Install] [-PreferRancher]
+Usage: .\check_and_install_tools.ps1 [-Install]
 
 Checks tools needed for the core hackathon stack:
 git, docker, docker compose, node, npm, go, and sqlite3.
@@ -15,11 +14,10 @@ git, docker, docker compose, node, npm, go, and sqlite3.
 Default mode only reports missing tools. -Install attempts best-effort installs
 on Windows with winget.
 
-Container engine: on Windows the engine is set up by ensure_container_engine.ps1.
-If Docker is missing or its daemon will not run (for example because WSL2 is
-missing), it enables WSL2 and installs the Rancher Desktop fallback with the
-'dockerd (moby)' engine so 'docker' works. -PreferRancher skips Docker Desktop
-entirely and goes straight to Rancher.
+Container engine: on Windows the engine is Docker Desktop with the Hyper-V backend,
+set up by ensure_container_engine.ps1. If Docker is missing, it enables the Hyper-V
+Windows feature, installs Docker Desktop, and configures the Hyper-V backend so
+'docker' works. (Hyper-V needs Windows Pro/Enterprise/Education and a reboot.)
 "@
   exit 0
 }
@@ -45,8 +43,8 @@ Test-Command "npm" "npm"
 Test-Command "go" "go"
 Test-Command "sqlite3" "sqlite3"
 
-# Container engine: report whether 'docker' works. On Windows this may be Docker Desktop
-# or the Rancher Desktop (moby) fallback; ensure_container_engine.ps1 owns the setup.
+# Container engine: report whether 'docker' works. On Windows the engine is Docker Desktop
+# with the Hyper-V backend; ensure_container_engine.ps1 owns the setup.
 $dockerReachable = $false
 if (Get-Command docker -ErrorAction SilentlyContinue) {
   docker info *> $null
@@ -94,20 +92,16 @@ if ($missing -contains "go")      { winget install --id GoLang.Go -e --accept-pa
 if ($missing -contains "sqlite3") { winget install --id SQLite.SQLite -e --accept-package-agreements --accept-source-agreements }
 
 # Container engine: hand off to the dedicated helper. On Windows this starts Docker
-# Desktop if it is present and working, and otherwise enables WSL2 and installs the
-# Rancher Desktop fallback (moby engine) so 'docker' works for building and pushing.
+# Desktop if it is present, and otherwise enables Hyper-V and installs Docker Desktop
+# configured for the Hyper-V backend so 'docker' works for building and pushing.
 if (-not $dockerReachable) {
   $ensureScript = Join-Path $PSScriptRoot "ensure_container_engine.ps1"
   if (Test-Path $ensureScript) {
     Write-Host ""
-    Write-Host "==> Setting up the container engine (Docker, or the Rancher Desktop fallback)"
-    if ($PreferRancher) {
-      & $ensureScript -Install -PreferRancher
-    } else {
-      & $ensureScript -Install
-    }
+    Write-Host "==> Setting up the container engine (Docker Desktop with the Hyper-V backend)"
+    & $ensureScript -Install
   } else {
     Write-Host "Could not find ensure_container_engine.ps1 next to this script."
-    Write-Host "Install Rancher Desktop (with the 'dockerd (moby)' engine) manually, then retry. Do not install Docker."
+    Write-Host "Install Docker Desktop from https://www.docker.com/products/docker-desktop/ (Hyper-V backend) manually."
   }
 }

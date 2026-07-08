@@ -50,23 +50,40 @@ function Test-Command($Name) {
   return [bool](Get-Command $Name -ErrorAction SilentlyContinue)
 }
 
+# Docker Desktop on Windows writes "credsStore": "desktop" into %USERPROFILE%\.docker\config.json.
+# That credential helper very commonly breaks 'docker login'/'docker push' to the proxy. Remove
+# the entry (backing the file up first) so credentials are written directly to config.json.
+function Repair-DockerCredsStore {
+  $configPath = Join-Path $env:USERPROFILE ".docker\config.json"
+  if (-not (Test-Path $configPath)) { return }
+  try {
+    $config = Get-Content -Raw $configPath | ConvertFrom-Json
+    if (($config.PSObject.Properties.Name -contains "credsStore") -and ($config.credsStore -eq "desktop")) {
+      Copy-Item $configPath "$configPath.bak" -Force
+      $config.PSObject.Properties.Remove("credsStore")
+      $config | ConvertTo-Json -Depth 20 | Set-Content -Path $configPath -Encoding ascii
+      Write-Host "Removed 'credsStore: desktop' from $configPath (backup at config.json.bak) to fix Windows Docker login."
+      Write-Host "IMPORTANT: run the login/push from a NEW shell so the change is picked up cleanly."
+      Write-Host "If this push fails right after the edit, open a fresh terminal (or restart Claude Code) and rerun."
+    }
+  } catch {
+    Write-Warning "Could not adjust $configPath automatically: $($_.Exception.Message)."
+    Write-Warning "If login fails, remove the '`"credsStore`": `"desktop`",' line from that file and retry."
+  }
+}
+
 if ([string]::IsNullOrWhiteSpace($Token)) { Fail "-Token is required, or set HACKATHON_PROXY_TOKEN." }
 if ([string]::IsNullOrWhiteSpace($LocalImage)) { Fail "-LocalImage is required." }
 if ([string]::IsNullOrWhiteSpace($LoginUser)) { Fail "-LoginUser cannot be empty." }
 if ([string]::IsNullOrWhiteSpace($Tag)) { $Tag = (Get-Date).ToUniversalTime().ToString("yyyyMMdd-HHmmss") }
 
-# A Rancher Desktop (moby) install exposes docker.exe under %USERPROFILE%\.rd\bin, which
-# may not be on a fresh session's PATH yet. Add it before checking for docker.
-$rdBin = Join-Path $env:USERPROFILE ".rd\bin"
-if ((Test-Path $rdBin) -and ($env:Path -notlike "*$rdBin*")) { $env:Path = "$rdBin;$env:Path" }
-
 if (-not (Test-Command "docker")) {
-  Fail "Docker is not installed or not on PATH. On Windows, set up a container engine with ..\..\hackathon-bootstrap\scripts\ensure_container_engine.ps1 -Install (installs the Rancher Desktop 'moby' fallback if Docker Desktop is unavailable), then retry."
+  Fail "Docker is not installed or not on PATH. On Windows, set up the engine with ..\..\hackathon-bootstrap\scripts\ensure_container_engine.ps1 -Install (enables Hyper-V and installs Docker Desktop), then retry."
 }
 if (-not (Test-Command "curl")) { Fail "curl is required for the local health check." }
 docker info *> $null
 if ($LASTEXITCODE -ne 0) {
-  Fail "Docker is installed, but the Docker daemon is not reachable. Start Docker Desktop, or on Windows run ..\..\hackathon-bootstrap\scripts\ensure_container_engine.ps1 -Install to set up the Rancher Desktop fallback, then retry."
+  Fail "Docker is installed, but the Docker daemon is not reachable. Start Docker Desktop, or on Windows run ..\..\hackathon-bootstrap\scripts\ensure_container_engine.ps1 -Install to enable Hyper-V and install Docker Desktop, then retry."
 }
 
 $ProxyHost = $ProxyHost -replace "^https?://", ""
@@ -169,9 +186,12 @@ if (-not $SkipSmoke) {
 
 $finalUrl = "$ProxyHost/${teamId}:$Tag"
 
+# Fix the common Windows credsStore issue before logging in (Docker Desktop's "desktop" helper).
+Repair-DockerCredsStore
+
 Write-Host "Logging in to $ProxyHost as $LoginUser"
 $Token | docker login $ProxyHost --username $LoginUser --password-stdin | Out-Null
-if ($LASTEXITCODE -ne 0) { Fail "Docker login failed." }
+if ($LASTEXITCODE -ne 0) { Fail "Docker login failed. On Windows, if this is a credential-store error, the '`"credsStore`": `"desktop`",' line was removed from %USERPROFILE%\.docker\config.json just now — open a NEW terminal (or restart Claude Code so it inherits the updated PATH/credentials) and rerun the deploy. If 'docker' itself was not found, that also means the shell has a stale PATH from a fresh Docker Desktop install: reopen the terminal / restart Claude Code and try again." }
 
 docker tag $LocalImage $finalUrl
 if ($LASTEXITCODE -ne 0) { Fail "Docker tag failed." }

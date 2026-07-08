@@ -104,17 +104,10 @@ done
 [[ -n "$LOGIN_USER" ]] || fail "--login-user cannot be empty."
 [[ -n "$TAG" ]] || TAG="$(date -u +%Y%m%d-%H%M%S)"
 
-# Rancher Desktop exposes its docker CLI under ~/.rd/bin; add it so an existing Rancher
-# engine is found even in a fresh shell. Any engine that provides 'docker' works here.
-RD_BIN="$HOME/.rd/bin"
-if [[ -d "$RD_BIN" && ":$PATH:" != *":$RD_BIN:"* ]]; then
-  export PATH="$RD_BIN:$PATH"
-fi
-
-need_cmd docker || fail "No 'docker' command found. Install a container engine (Rancher Desktop — on macOS via the iru self-service 'All' section; do not install Docker), then retry."
+need_cmd docker || fail "Docker is not installed or not on PATH. Install Docker Desktop, then retry."
 need_cmd curl || fail "curl is required for the local health check."
 docker info >/dev/null 2>&1 \
-  || fail "A 'docker' command exists but the engine is not reachable. Start your container engine (open Rancher Desktop, or Docker Desktop if that is what you have), then retry."
+  || fail "Docker is installed, but the Docker daemon is not reachable. Start Docker Desktop or fix Docker permissions, then retry."
 
 PROXY_HOST="${PROXY_HOST#http://}"
 PROXY_HOST="${PROXY_HOST#https://}"

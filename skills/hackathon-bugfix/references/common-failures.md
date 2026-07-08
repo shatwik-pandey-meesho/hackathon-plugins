@@ -47,29 +47,36 @@
 - Check `nginx` is installed in the runtime stage and its config is copied to `/etc/nginx/conf.d/`.
 - Check frontend port `9080` (nginx) and backend port `8090` are exposed and not already used by another program.
 
-## Container Engine Will Not Start
+## Docker Will Not Start
 
-**Policy: never install Docker.** If a `docker` command already works (from Docker Desktop *or* Rancher Desktop's `dockerd (moby)` engine), use it. If none is installed, install **Rancher Desktop** — on **macOS** from the **iru self-service** portal ("All" section, alongside **Node.js**), on **Windows** via the script below.
+The container engine is **Docker Desktop** on every OS.
 
 ### macOS
-- If `docker` works, you are done. If it is installed but the engine is stopped, open **Rancher Desktop** (or Docker Desktop if that is what you have) and wait for it to finish starting.
-- If nothing is installed: open the **iru self-service** portal, go to the **All** section, and install **Rancher Desktop** and **Node.js**. Open Rancher Desktop once and set **Preferences → Container Engine** to **dockerd (moby)**. Do **not** install Docker Desktop.
-- Rancher's `docker` CLI lives under `~/.rd/bin`. If a **new terminal** cannot find `docker`, that folder is not on PATH yet — reopen the terminal or add it.
+- If it is installed but the engine is stopped, start it: `open -a Docker` and wait for the whale icon to settle.
+- If it is not installed, install Docker Desktop (`brew install --cask docker`, or from https://www.docker.com/products/docker-desktop/), then open it once.
 
-### Windows / WSL2
-- On Windows, a Linux-container engine needs virtualization. **Rancher Desktop requires WSL2** (CPU virtualization must be enabled in BIOS). If `docker info` fails with a WSL or virtualization error, WSL2 is likely missing or disabled.
-- First try enabling WSL2: open **PowerShell as Administrator** and run `wsl --install`, then **reboot**.
-- Then install the engine with the script: run `hackathon-bootstrap/scripts/ensure_container_engine.ps1 -Install`. If an existing Docker is present and working it is used as-is; otherwise it enables WSL2 and installs **Rancher Desktop** with the **`dockerd (moby)`** engine. It never installs Docker.
-- Rancher's `docker.exe` lives under `%USERPROFILE%\.rd\bin`. If a **new terminal** cannot find `docker` after install, that folder is not on PATH yet — reopen the terminal or add it.
-- In Rancher Desktop, confirm **Preferences → Container Engine** is set to **dockerd (moby)**, not containerd; containerd provides `nerdctl`, not `docker`, and the scripts require `docker`.
-- If virtualization is entirely unavailable, no local Linux engine works — build against an organizer-provided remote engine via `DOCKER_HOST` / `docker context`.
+### Windows (Docker Desktop + Hyper-V backend)
+- Windows uses **Docker Desktop with the Hyper-V backend** by default. Hyper-V needs virtualization enabled in BIOS and is available on **Windows Pro/Enterprise/Education** (not Home).
+- If Docker is present but not running, start **Docker Desktop** and wait for it to finish.
+- If Docker is missing, or Hyper-V is not enabled: run `hackathon-bootstrap/scripts/ensure_container_engine.ps1 -Install`. It starts an existing Docker Desktop, or enables the **Hyper-V** and **Containers** Windows features and installs Docker Desktop configured for the Hyper-V backend. Enabling Hyper-V needs an **Administrator** PowerShell and a **reboot** before the engine works.
+- To enable Hyper-V by hand (Administrator PowerShell), then reboot:
+  - `Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All -NoRestart`
+  - `Enable-WindowsOptionalFeature -Online -FeatureName Containers -All -NoRestart`
+- Confirm the backend: in Docker Desktop, **Settings → General → "Use the WSL 2 based engine" should be UNCHECKED** so it runs on Hyper-V.
+- **Windows Home** has no Hyper-V. There, Docker Desktop must use its **WSL2** backend instead: run `wsl --install` (Administrator), reboot, then install Docker Desktop and leave the default WSL2 engine enabled.
+
+### Windows login/push fails after Docker Desktop is running (credsStore)
+- Docker Desktop on Windows writes `"credsStore": "desktop"` into `%USERPROFILE%\.docker\config.json`. This very commonly breaks `docker login`/`docker push` to the proxy (errors like `error storing credentials`, `The stub received bad data`, or a credential-helper failure).
+- Fix: remove the `"credsStore": "desktop",` line from `%USERPROFILE%\.docker\config.json`, then log in and push again. The push script does this automatically (it backs the file up to `config.json.bak` first), so a normal deploy handles it — but if you are running `docker login`/`docker push` by hand and it fails, edit that file.
+- **Run the retry in a NEW shell.** After editing the config (or after a fresh Docker Desktop install that changed `PATH`), the current shell can hold stale `PATH`/credential state. If `docker` is "not found" or login still fails in the **same** session, stop retrying there — a running process inherits `PATH` at launch and cannot refresh it mid-run. **Close and reopen the terminal, or restart Claude Code, then rerun.** (This is why an agent that keeps retrying in the same session appears "stuck" even after the config is fixed.)
 
 ### Linux
-- If `docker` works, use it. Otherwise install **Rancher Desktop** from https://rancherdesktop.io and choose the `dockerd (moby)` engine. Do not install Docker.
+- Start the docker service (`sudo systemctl start docker`) and ensure your user is in the `docker` group. Install with `sudo apt-get install -y docker.io docker-compose-plugin` if missing.
 
 ## Proxy Push Fails
 
-- Check your container engine is running and `docker info` works — Rancher Desktop, or Docker Desktop if that is what you have. If none is installed, see "Container Engine Will Not Start" above (never install Docker; install Rancher Desktop).
+- Check Docker Desktop is running and `docker info` works. On Windows this is Docker Desktop with the Hyper-V backend; see "Docker Will Not Start" above.
+- **Windows credsStore error** (`error storing credentials`, `The stub received bad data`, or credential-helper failures on `docker login`/`docker push`): remove the `"credsStore": "desktop",` line from `%USERPROFILE%\.docker\config.json` and retry. The push script does this automatically (backing up to `config.json.bak`).
 - Check the proxy host is only the registry host, with no `https://` prefix and no path.
 - Check the Docker login username and token are the organizer-provided values.
 - Check the local image exists before tagging.
